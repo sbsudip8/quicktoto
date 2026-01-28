@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quicktoto</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#2e8b57" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Google Maps -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
+</head>
+
+<body>
+  <header>
+    <h1>🚕 Quicktoto</h1>
+    <p>Book Toto rides easily</p>
+  </header>
+
+  <main>
+    <button id="gpsBtn">📍 Get Pickup Location</button>
+
+    <div id="map"></div>
+
+    <div class="info">
+      <p><strong>Pickup:</strong> <span id="pickupText">Not set</span></p>
+      <p><strong>Drop:</strong> <span id="dropText">Not set</span></p>
+    </div>
+
+    <button id="requestBtn">🚕 Request Ride</button>
+  </main>
+
+  <script src="script.js"></script>
+
+  <!-- Service Worker -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
+</body>
+</html>
