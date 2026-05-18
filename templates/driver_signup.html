@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Driver Signup</title>
+
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="header">
+
+        <h1>🚖 Driver Signup</h1>
+
+        <p>Create Verified Driver Account</p>
+
+    </div>
+
+
+
+    <div class="driver-container">
+
+        <div class="ride-card">
+
+            <h2>
+
+                Driver Registration
+
+            </h2>
+
+
+
+            <!-- QT CARE MESSAGE -->
+            <p style="color:red;">
+
+                Get your Toto License ID from your
+                nearest QT Care center after
+                verification.
+
+            </p>
+
+
+
+            <form method="POST">
+
+                <!-- LICENSE ID -->
+                <input
+
+                    type="text"
+
+                    name="license_id"
+
+                    placeholder="Toto License ID"
+
+                    required
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:15px;"
+
+                >
+
+
+
+
+                <!-- FIRST NAME -->
+                <input
+
+                    type="text"
+
+                    name="first_name"
+
+                    placeholder="First Name"
+
+                    required
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:15px;"
+
+                >
+
+
+
+
+                <!-- LAST NAME -->
+                <input
+
+                    type="text"
+
+                    name="last_name"
+
+                    placeholder="Last Name (Optional)"
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:15px;"
+
+                >
+
+
+
+
+                <!-- PHONE -->
+                <input
+
+                    type="text"
+
+                    name="phone"
+
+                    placeholder="Phone Number"
+
+                    required
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:15px;"
+
+                >
+
+
+
+
+                <!-- EMAIL -->
+                <input
+
+                    type="email"
+
+                    name="email"
+
+                    placeholder="Email ID"
+
+                    required
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:15px;"
+
+                >
+
+
+
+
+                <!-- USERNAME -->
+                <input
+
+                    type="text"
+
+                    name="username"
+
+                    placeholder="Username"
+
+                    required
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:15px;"
+
+                >
+
+
+
+
+                <!-- PASSWORD -->
+                <input
+
+                    type="password"
+
+                    name="password"
+
+                    placeholder="Password"
+
+                    required
+
+                    style="width:100%;
+                           padding:12px;
+                           margin-bottom:20px;"
+
+                >
+
+
+
+
+                <!-- BUTTON -->
+                <button type="submit">
+
+                    Signup
+
+                </button>
+
+            </form>
+
+
+
+            <p>
+
+                Already have account?
+
+                <a href="/login/driver">
+
+                    Login
+
+                </a>
+
+            </p>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

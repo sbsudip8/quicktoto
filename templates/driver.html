@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Quicktoto Driver</title>
+
+
+    <!-- CSS -->
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+
+        <div class="topbar">
+
+            <div>
+
+                <h1>🚖 Driver Dashboard</h1>
+
+            </div>
+
+
+
+            <!-- DRIVER MENU -->
+            <div class="dropdown">
+
+                <button class="dropbtn">
+
+                    Welcome,
+
+                    {{ driver[3] }}
+
+                    ▼
+
+                </button>
+
+
+
+                <div class="dropdown-content">
+
+                    <a href="#">
+
+                        Profile
+
+                    </a>
+
+
+
+                    <a href="#">
+
+                        Ride History
+
+                    </a>
+
+
+
+                    <a href="/logout">
+
+                        Logout
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- DRIVER CONTENT -->
+    <div class="driver-container">
+
+        <div class="ride-card">
+
+    <h2>
+
+    🚖 Driver Dashboard
+
+    </h2>
+
+
+    <p>
+
+        <strong>Name:</strong>
+
+        {{ driver[3] }}
+
+        {{ driver[4] }}
+
+    </p>
+
+
+
+    <p>
+
+        <strong>Toto ID:</strong>
+
+        {{ driver[7] }}
+
+    </p>
+
+
+
+    <p>
+
+        <strong>Available Seats:</strong>
+
+        {{ driver[9] }}
+
+    </p>
+
+
+
+    <p id="availabilityText">
+
+        Status: Offline
+
+    </p>
+
+
+
+    <button id="toggleBtn">
+
+    🟢 Go Online
+
+    </button>
+
+
+
+    <hr>
+
+
+
+    <div id="rideContainer">
+
+        <h3>
+
+            🔴 You are offline
+
+        </h3>
+
+    </div>
+
+</div>
+
+    </div>
+
+
+
+    <!-- DRIVER JS -->
+    <script src="{{ url_for('static', filename='driver.js') }}"></script>
+
+</body>
+
+</html>

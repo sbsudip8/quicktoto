@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Quicktoto V3</title>
+
+
+    <!-- LEAFLET CSS -->
+    <link rel="stylesheet"
+        href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+
+    <!-- LEAFLET ROUTING -->
+    <link rel="stylesheet"
+        href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+
+    <!-- YOUR CSS -->
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>🚖 Quicktoto</h1>
+
+        </div>
+
+
+
+        <!-- USER MENU -->
+        <div class="dropdown">
+
+            <button class="dropbtn">
+
+                Welcome,
+
+                {{ user[1] }}
+
+                ▼
+
+            </button>
+
+
+
+            <div class="dropdown-content">
+
+                <a href="#">
+
+                    Profile
+
+                </a>
+
+
+
+                <a href="#">
+
+                    Ride History
+
+                </a>
+
+
+
+                <a href="/logout">
+
+                    Logout
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+    <!-- MAIN CONTAINER -->
+    <div class="container">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+
+            <!-- GPS BUTTON -->
+            <button id="gpsBtn">
+
+                📍 Get Pickup Location
+
+            </button>
+
+
+
+            <!-- LOCATION INFO -->
+            <div class="info-box">
+
+                <p>
+
+                    <strong>Pickup:</strong>
+
+                    <span id="pickupText">
+
+                        Not set
+
+                    </span>
+
+                </p>
+
+
+                <p>
+
+                    <strong>Drop:</strong>
+
+                    <span id="dropText">
+
+                        Not set
+
+                    </span>
+
+                </p>
+
+            </div>
+
+
+
+            <!-- RIDE TYPE -->
+            <div class="ride-type">
+
+                <h3>Ride Type</h3>
+
+                <label>
+
+                    <input type="radio"
+                        name="rideType"
+                        value="Private"
+                        checked>
+
+                    Private Ride
+
+                </label>
+
+                <br><br>
+
+                <label>
+
+                    <input type="radio"
+                        name="rideType"
+                        value="Shared">
+
+                    Shared Ride
+
+                </label>
+
+            </div>
+
+
+
+            <!-- FARE -->
+            <div class="fare-box">
+
+                <h3>Estimated Fare</h3>
+
+                <p id="fareText">
+
+                    ₹0
+
+                </p>
+
+            </div>
+
+
+
+            <!-- STATUS -->
+            <div class="status-box">
+
+                <h3>Ride Status</h3>
+
+                <p id="rideStatus">
+
+                    No active ride
+
+                </p>
+
+                <p id="driverInfo"></p>
+
+            </div>
+
+
+
+            <!-- REQUEST BUTTON -->
+            <button id="requestBtn">
+
+                🚖 Request Ride
+
+            </button>
+
+        </div>
+
+
+
+        <!-- MAP -->
+        <div id="map"></div>
+
+    </div>
+
+
+
+    <!-- LEAFLET JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+    <!-- ROUTING JS -->
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+
+    <!-- YOUR JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>

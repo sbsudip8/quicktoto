@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Choose Login</title>
+
+    <link rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+    <div class="header">
+
+        <h1>🚖 Quicktoto Login</h1>
+
+        <p>Select Account Type</p>
+
+    </div>
+
+
+
+    <div class="driver-container">
+
+        <div class="ride-card">
+
+            <h2>
+
+                Login As
+
+            </h2>
+
+
+
+            <a href="/login/passenger">
+
+                <button>
+
+                    👤 Passenger Login
+
+                </button>
+
+            </a>
+
+
+
+            <a href="/login/driver">
+
+                <button>
+
+                    🚖 Driver Login
+
+                </button>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
