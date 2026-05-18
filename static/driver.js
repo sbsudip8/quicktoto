@@ -6,6 +6,8 @@ const toggleBtn = document.getElementById(
 
 let isOnline = false;
 
+let rideAccepted = false;
+
 
 
 
@@ -203,6 +205,15 @@ async function fetchRide() {
 
 
 
+    // IF CURRENT RIDE ACTIVE
+    if (rideAccepted) {
+
+        return;
+
+    }
+
+
+
     let response = await fetch(
 
         "/get_ride"
@@ -253,6 +264,16 @@ async function fetchRide() {
 
 
 
+            <p>
+
+                <strong>Seats:</strong>
+
+                ${data.ride.seats}
+
+            </p>
+
+
+
             <button id="acceptBtn">
 
                 ✅ Accept Ride
@@ -293,7 +314,13 @@ async function fetchRide() {
 
 
 
-            // UPDATE DRIVER UI
+            // LOCK CURRENT RIDE
+            rideAccepted = true;
+
+
+
+
+            // UPDATE UI
             document.getElementById(
 
                 "rideContainer"
@@ -428,6 +455,7 @@ async function fetchRide() {
 
 
 
+
                 // RESET UI
                 document.getElementById(
 
@@ -442,6 +470,12 @@ async function fetchRide() {
                     </h3>
 
                 `;
+
+
+
+
+                // ALLOW NEW RIDES
+                rideAccepted = false;
 
             };
 
@@ -476,6 +510,24 @@ async function fetchRide() {
                 "❌ Ride Rejected"
 
             );
+
+
+
+
+            // RESET WAITING UI
+            document.getElementById(
+
+                "rideContainer"
+
+            ).innerHTML = `
+
+                <h3>
+
+                    Waiting for Ride...
+
+                </h3>
+
+            `;
 
         };
 
