@@ -1144,15 +1144,25 @@ def get_online_drivers():
 
             "user_id": driver[1],
 
-            "toto_number": driver[2],
+            "license_id": driver[2],
 
-            "total_seats": driver[3],
+            "first_name": driver[3],
 
-            "available_seats": driver[4],
+            "last_name": driver[4],
 
-            "latitude": driver[5],
+            "phone": driver[5],
 
-            "longitude": driver[6]
+            "email": driver[6],
+
+            "toto_number": driver[7],
+
+            "total_seats": driver[8],
+
+            "available_seats": driver[9],
+
+            "latitude": driver[10],
+
+            "longitude": driver[11]
 
         })
 
@@ -1175,6 +1185,76 @@ def logout():
         "/"
 
     )
+
+# UPDATE DRIVER LOCATION
+@app.route(
+
+    "/update_driver_location",
+
+    methods=["POST"]
+
+)
+
+def update_driver_location():
+
+    # NOT LOGGED IN
+    if "user_id" not in session:
+
+        return jsonify({
+
+            "error": "Not logged in"
+
+        })
+
+
+
+    user_id = session["user_id"]
+
+
+
+    data = request.json
+
+    latitude = data["latitude"]
+
+    longitude = data["longitude"]
+
+
+
+
+    # UPDATE DB
+    cursor.execute(
+
+        '''
+
+        UPDATE drivers
+
+        SET latitude = ?,
+            longitude = ?
+
+        WHERE user_id = ?
+
+        ''',
+
+        (
+
+            latitude,
+            longitude,
+            user_id
+
+        )
+
+    )
+
+    conn.commit()
+
+
+
+
+    return jsonify({
+
+        "success": True
+
+    })
 
 if __name__ == "__main__":
 

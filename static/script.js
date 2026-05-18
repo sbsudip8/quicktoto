@@ -499,6 +499,16 @@ async function checkRideStatus() {
 // ONLINE DRIVERS
 async function loadOnlineDrivers() {
 
+    // MAP NOT READY
+    if (!map) {
+
+        return;
+
+    }
+
+
+
+
     // REMOVE OLD MARKERS
     driverMarkers.forEach(marker => {
 
@@ -511,7 +521,7 @@ async function loadOnlineDrivers() {
 
 
 
-    // FETCH DRIVERS
+    // FETCH ONLINE DRIVERS
     let response = await fetch(
 
         "/get_online_drivers"
@@ -525,7 +535,7 @@ async function loadOnlineDrivers() {
 
 
 
-    // ADD MARKERS
+    // ADD DRIVER MARKERS
     drivers.forEach(driver => {
 
         // SKIP EMPTY GPS
@@ -556,11 +566,19 @@ async function loadOnlineDrivers() {
 
         .bindPopup(
 
-            `🚖 ${driver.toto_number}<br>
+            `
 
-             Seats Available:
+            🚖 ${driver.first_name}<br>
 
-             ${driver.available_seats}`
+            Toto ID:
+
+            ${driver.toto_number}<br>
+
+            Available Seats:
+
+            ${driver.available_seats}
+
+            `
 
         );
 
