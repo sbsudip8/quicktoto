@@ -311,15 +311,151 @@ def request_ride():
 
     data = request.json
 
+    pickup = data["pickup"]
+
+    drop = data["drop"]
+
+    ride_type = data["rideType"]
+
+    fare = data["fare"]
+
+    seats_requested = int(data["seats"])
+
+
+
+
+    # GET ONLINE DRIVERS
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM drivers
+
+        WHERE online = 1
+
+        '''
+
+    )
+
+
+
+    drivers = cursor.fetchall()
+
+
+
+
+    selected_driver = None
+
+
+
+
+    # FIND AVAILABLE DRIVER
+    for driver in drivers:
+
+        available_seats = driver[9]
+
+
+
+        # PRIVATE RIDE
+        if ride_type == "Private":
+
+            if available_seats == 5:
+
+                selected_driver = driver
+
+                break
+
+
+
+        # SHARED RIDE
+        else:
+
+            if available_seats >= seats_requested:
+
+                selected_driver = driver
+
+                break
+
+
+
+
+    # NO DRIVER FOUND
+    if not selected_driver:
+
+        return jsonify({
+
+            "status": "No Toto Available"
+
+        })
+
+
+
+
+    # DRIVER FOUND
+    driver_id = selected_driver[0]
+
+    driver_name = selected_driver[3]
+
+
+
+    # UPDATE AVAILABLE SEATS
+    if ride_type == "Private":
+
+        new_available = 0
+
+    else:
+
+        new_available = (
+
+            selected_driver[9]
+
+            - seats_requested
+
+        )
+
+
+
+
+    cursor.execute(
+
+        '''
+
+        UPDATE drivers
+
+        SET available_seats = ?
+
+        WHERE id = ?
+
+        ''',
+
+        (
+
+            new_available,
+
+            driver_id
+
+        )
+
+    )
+
+    conn.commit()
+
+
+
+
+    # SAVE CURRENT RIDE
     current_ride = data
 
     ride_status = "Searching for driver..."
 
-    assigned_driver = "🚖 Toto Driver 1"
+    assigned_driver = driver_name
 
 
 
-    # SAVE TO DATABASE
+
+    # SAVE RIDE
     cursor.execute(
 
         '''
@@ -327,9 +463,13 @@ def request_ride():
         INSERT INTO rides (
 
             pickup,
+
             drop_location,
+
             ride_type,
+
             fare,
+
             status
 
         )
@@ -340,10 +480,14 @@ def request_ride():
 
         (
 
-            str(data["pickup"]),
-            str(data["drop"]),
-            data["rideType"],
-            data["fare"],
+            str(pickup),
+
+            str(drop),
+
+            ride_type,
+
+            fare,
+
             ride_status
 
         )
@@ -354,10 +498,14 @@ def request_ride():
 
 
 
+
     return jsonify({
 
         "status": ride_status,
-        "driver": assigned_driver
+
+        "driver": driver_name,
+
+        "availableSeats": new_available
 
     })
 
@@ -1253,6 +1401,136 @@ def update_driver_location():
     return jsonify({
 
         "success": True
+
+    })
+
+# DRIVER ARRIVED
+@app.route(
+
+    "/ride_arrived",
+
+    methods=["POST"]
+
+)
+
+def ride_arrived():
+
+    global ride_status
+
+    ride_status = "Driver Reached Pickup"
+
+
+
+
+    return jsonify({
+
+        "status": ride_status
+
+    })
+
+# PASSENGER ONBOARD
+@app.route(
+
+    "/ride_onboard",
+
+    methods=["POST"]
+
+)
+
+def ride_onboard():
+
+    global ride_status
+
+    ride_status = "Passenger Onboard"
+
+
+
+
+    return jsonify({
+
+        "status": ride_status
+
+    })
+
+# COMPLETE RIDE
+@app.route(
+
+    "/complete_ride",
+
+    methods=["POST"]
+
+)
+
+def complete_ride():
+
+    global ride_status
+    global current_ride
+
+
+
+
+    # GET LAST DRIVER
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM drivers
+
+        WHERE first_name = ?
+
+        ''',
+
+        (assigned_driver,)
+
+    )
+
+
+
+    driver = cursor.fetchone()
+
+
+
+
+    # RESTORE SEATS
+    if driver:
+
+        cursor.execute(
+
+            '''
+
+            UPDATE drivers
+
+            SET available_seats = 5
+
+            WHERE id = ?
+
+            ''',
+
+            (driver[0],)
+
+        )
+
+        conn.commit()
+
+
+
+
+    ride_status = "Ride Completed"
+
+
+
+
+    # CLEAR ACTIVE RIDE
+    current_ride = None
+
+
+
+
+    return jsonify({
+
+        "status": ride_status
 
     })
 

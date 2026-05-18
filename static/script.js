@@ -369,8 +369,11 @@ requestBtn.onclick = async () => {
 
     ).value;
 
+    let seatCount = document.getElementById(
 
+    "seatCount"
 
+    ).value;
 
     // SEND TO BACKEND
     await fetch(
@@ -399,7 +402,9 @@ requestBtn.onclick = async () => {
 
                     "fareText"
 
-                ).innerText
+                ).innerText,
+
+                seats: seatCount
 
             })
 
@@ -486,7 +491,39 @@ async function checkRideStatus() {
         }
 
 
+        if (data.status === "Driver Reached Pickup") {
 
+            alert(
+
+                "📍 Driver has arrived at pickup location."
+
+            );
+
+        }
+
+
+
+        if (data.status === "Passenger Onboard") {
+
+            alert(
+
+                "👤 Passenger onboard."
+
+            );
+
+        }
+
+
+
+        if (data.status === "Ride Completed") {
+
+            alert(
+
+                "✅ Ride completed successfully."
+
+            );
+
+        }
         lastStatus = data.status;
 
     }

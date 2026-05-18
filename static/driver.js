@@ -293,11 +293,157 @@ async function fetchRide() {
 
 
 
-            alert(
+            // UPDATE DRIVER UI
+            document.getElementById(
 
-                "✅ Ride Accepted"
+                "rideContainer"
 
-            );
+            ).innerHTML = `
+
+                <h2>
+
+                    Ride Accepted
+
+                </h2>
+
+
+
+                <button id="arrivedBtn">
+
+                    📍 Reached Pickup
+
+                </button>
+
+
+
+                <button id="onboardBtn">
+
+                    👤 Passenger Onboard
+
+                </button>
+
+
+
+                <button id="completeBtn">
+
+                    ✅ Complete Ride
+
+                </button>
+
+            `;
+
+
+
+
+            // ARRIVED
+            document.getElementById(
+
+                "arrivedBtn"
+
+            ).onclick = async () => {
+
+                await fetch(
+
+                    "/ride_arrived",
+
+                    {
+
+                        method: "POST"
+
+                    }
+
+                );
+
+
+
+                alert(
+
+                    "Reached Pickup"
+
+                );
+
+            };
+
+
+
+
+            // ONBOARD
+            document.getElementById(
+
+                "onboardBtn"
+
+            ).onclick = async () => {
+
+                await fetch(
+
+                    "/ride_onboard",
+
+                    {
+
+                        method: "POST"
+
+                    }
+
+                );
+
+
+
+                alert(
+
+                    "Passenger Onboard"
+
+                );
+
+            };
+
+
+
+
+            // COMPLETE
+            document.getElementById(
+
+                "completeBtn"
+
+            ).onclick = async () => {
+
+                await fetch(
+
+                    "/complete_ride",
+
+                    {
+
+                        method: "POST"
+
+                    }
+
+                );
+
+
+
+                alert(
+
+                    "Ride Completed"
+
+                );
+
+
+
+                // RESET UI
+                document.getElementById(
+
+                    "rideContainer"
+
+                ).innerHTML = `
+
+                    <h3>
+
+                        Waiting for Ride...
+
+                    </h3>
+
+                `;
+
+            };
 
         };
 
