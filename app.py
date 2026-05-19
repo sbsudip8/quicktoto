@@ -770,22 +770,49 @@ def accept_ride():
 
         })
 
-
-
-
-    # ALREADY ACCEPTED
-    if booking[10] == "accepted":
+    # ONLY PENDING BOOKINGS CAN BE ACCEPTED
+    if booking[10] != "pending":
 
         return jsonify({
 
-            "status": "Already Accepted"
+            "status": "Already Taken"
 
         })
 
+    # GET BOOKING SEATS
+    seats_requested = booking[8]
+
+    driver_id = booking[4]
 
 
 
-    # ACCEPT BOOKING
+
+    # REDUCE DRIVER SEATS
+    cursor.execute(
+
+        '''
+
+        UPDATE drivers
+
+        SET available_seats =
+
+            available_seats - ?
+
+        WHERE id = ?
+
+        ''',
+
+        (
+
+            seats_requested,
+
+            driver_id
+
+        )
+
+    )
+
+    # ACCEPT BOOKING SAFELY
     cursor.execute(
 
         '''
@@ -795,6 +822,7 @@ def accept_ride():
         SET status = 'accepted'
 
         WHERE booking_id = ?
+        AND status = 'pending'
 
         ''',
 
@@ -802,12 +830,7 @@ def accept_ride():
 
     )
 
-
-
     conn.commit()
-
-
-
 
     return jsonify({
 

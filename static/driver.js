@@ -300,7 +300,7 @@ async function fetchRide() {
 
         ).onclick = async () => {
 
-            await fetch(
+            let response = await fetch(
 
                 "/accept_ride",
 
@@ -323,6 +323,33 @@ async function fetchRide() {
                 }
 
             );
+
+
+
+            let result = await response.json();
+
+
+
+
+            if (
+
+                result.status ===
+
+                "Already Taken"
+
+            ) {
+
+                alert(
+
+                    "Ride already accepted by another driver."
+
+                );
+
+
+
+                return;
+
+            }
 
 
 
