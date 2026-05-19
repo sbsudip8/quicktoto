@@ -306,7 +306,19 @@ async function fetchRide() {
 
                 {
 
-                    method: "POST"
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type": "application/json"
+
+                    },
+
+                    body: JSON.stringify({
+
+                        booking_id: data.ride.booking_id
+
+                    })
 
                 }
 
@@ -375,7 +387,19 @@ async function fetchRide() {
 
                     {
 
-                        method: "POST"
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type": "application/json"
+
+                        },
+
+                        body: JSON.stringify({
+
+                            booking_id: data.ride.booking_id
+
+                        })
 
                     }
 
@@ -407,13 +431,23 @@ async function fetchRide() {
 
                     {
 
-                        method: "POST"
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type": "application/json"
+
+                        },
+
+                        body: JSON.stringify({
+
+                            booking_id: data.ride.booking_id
+
+                        })
 
                     }
 
                 );
-
-
 
                 alert(
 
@@ -439,7 +473,19 @@ async function fetchRide() {
 
                     {
 
-                        method: "POST"
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type": "application/json"
+
+                        },
+
+                        body: JSON.stringify({
+
+                            booking_id: data.ride.booking_id
+
+                        })
 
                     }
 
@@ -497,7 +543,19 @@ async function fetchRide() {
 
                 {
 
-                    method: "POST"
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type": "application/json"
+
+                    },
+
+                    body: JSON.stringify({
+
+                        booking_id: data.ride.booking_id
+
+                    })
 
                 }
 
@@ -514,7 +572,7 @@ async function fetchRide() {
 
 
 
-            // RESET WAITING UI
+            // RESET UI
             document.getElementById(
 
                 "rideContainer"

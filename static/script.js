@@ -430,11 +430,30 @@ let lastStatus = "";
 
 
 
-async function checkRideStatus() {
+async function checkBookingStatus() {
+
+    let booking_id = localStorage.getItem(
+
+        "booking_id"
+
+    );
+
+
+
+
+    // NO ACTIVE BOOKING
+    if (!booking_id) {
+
+        return;
+
+    }
+
+
+
 
     let response = await fetch(
 
-        "/ride_status"
+        `/booking_status/${booking_id}`
 
     );
 
@@ -445,34 +464,15 @@ async function checkRideStatus() {
 
 
 
-    // UPDATE STATUS TEXT
-    document.getElementById(
-
-        "rideStatus"
-
-    ).innerText = data.status;
-
-
-
-
-    // DRIVER INFO
-    document.getElementById(
-
-        "driverInfo"
-
-    ).innerText = data.driver || "";
-
-
-
-
-    // STATUS CHANGE POPUPS
+    // STATUS CHANGED
     if (data.status !== lastStatus) {
 
-        if (data.status === "Ride Accepted") {
+        // ACCEPTED
+        if (data.status === "accepted") {
 
             alert(
 
-                "✅ Your ride has been accepted!"
+                "✅ Ride Accepted"
 
             );
 
@@ -480,22 +480,13 @@ async function checkRideStatus() {
 
 
 
-        if (data.status === "Ride Rejected") {
+
+        // REJECTED
+        if (data.status === "rejected") {
 
             alert(
 
-                "❌ Your ride was rejected."
-
-            );
-
-        }
-
-
-        if (data.status === "Driver Reached Pickup") {
-
-            alert(
-
-                "📍 Driver has arrived at pickup location."
+                "❌ Ride Rejected"
 
             );
 
@@ -503,11 +494,19 @@ async function checkRideStatus() {
 
 
 
-        if (data.status === "Passenger Onboard") {
+
+        // ARRIVED
+        if (
+
+            data.status ===
+
+            "arrived"
+
+        ) {
 
             alert(
 
-                "👤 Passenger onboard."
+                "📍 Driver Arrived"
 
             );
 
@@ -515,21 +514,71 @@ async function checkRideStatus() {
 
 
 
-        if (data.status === "Ride Completed") {
+
+        // ONBOARD
+        if (
+
+            data.status ===
+
+            "onboard"
+
+        ) {
 
             alert(
 
-                "✅ Ride completed successfully."
+                "👤 Passenger Onboard"
 
             );
 
         }
+
+
+
+
+        // COMPLETED
+        if (
+
+            data.status ===
+
+            "completed"
+
+        ) {
+
+            alert(
+
+                "✅ Ride Completed"
+
+            );
+
+
+
+            localStorage.removeItem(
+
+                "booking_id"
+
+            );
+
+        }
+
+
+
+
         lastStatus = data.status;
 
     }
 
 }
 
+
+
+
+setInterval(
+
+    checkBookingStatus,
+
+    2000
+
+);
 
 
 

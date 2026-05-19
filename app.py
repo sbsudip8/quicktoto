@@ -16,6 +16,8 @@ conn = sqlite3.connect(
 
 cursor = conn.cursor()
 
+# TEMP DRIVER QUEUES
+driver_queues = {}
 
 # CREATE TABLE
 cursor.execute('''
@@ -119,10 +121,70 @@ CREATE TABLE IF NOT EXISTS drivers (
 
 conn.commit()
 
+# RIDES TABLE
+cursor.execute('''
+
+CREATE TABLE IF NOT EXISTS rides (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    ride_id TEXT,
+
+    driver_id INTEGER,
+
+    ride_type TEXT,
+
+    total_seats INTEGER,
+
+    available_seats INTEGER,
+
+    status TEXT
+
+)
+
+''')
+
+conn.commit()
+
+# BOOKINGS TABLE
+cursor.execute('''
+
+CREATE TABLE IF NOT EXISTS bookings (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    booking_id TEXT,
+
+    ride_id TEXT,
+
+    passenger_id INTEGER,
+
+    driver_id INTEGER,
+
+    pickup TEXT,
+
+    drop_location TEXT,
+
+    ride_type TEXT,
+
+    seats INTEGER,
+
+    fare TEXT,
+
+    status TEXT,
+
+    queue_position INTEGER DEFAULT 0
+
+)
+
+''')
+
+conn.commit()
+
 # GLOBAL VARIABLES
-current_ride = None
-ride_status = "No active ride"
-assigned_driver = None
+# current_ride = None
+# ride_status = "No active ride"
+# assigned_driver = None
 
 
 
@@ -302,14 +364,20 @@ def driver():
 
 
 # REQUEST RIDE
-@app.route("/request_ride", methods=["POST"])
+@app.route(
+
+    "/request_ride",
+
+    methods=["POST"]
+
+)
+
 def request_ride():
 
-    global current_ride
-    global ride_status
-    global assigned_driver
-
     data = request.json
+
+
+
 
     pickup = data["pickup"]
 
@@ -319,12 +387,43 @@ def request_ride():
 
     fare = data["fare"]
 
-    seats_requested = int(data["seats"])
+    seats_requested = int(
+
+        data["seats"]
+
+    )
 
 
 
 
-    # GET ONLINE DRIVERS
+    # PASSENGER
+    passenger_id = session["user_id"]
+
+
+
+
+    # CREATE BOOKING ID
+    cursor.execute(
+
+        "SELECT COUNT(*) FROM bookings"
+
+    )
+
+
+
+    total_bookings = cursor.fetchone()[0]
+
+
+
+    booking_id = (
+
+        "B"
+
+        + str(total_bookings + 1)
+
+    )
+
+    # FIND ELIGIBLE DRIVERS
     cursor.execute(
 
         '''
@@ -339,19 +438,34 @@ def request_ride():
 
     )
 
+    drivers = cursor.fetchall()
 
+    # FIND ELIGIBLE DRIVERS
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM drivers
+
+        WHERE online = 1
+
+        '''
+
+    )
 
     drivers = cursor.fetchall()
 
 
 
 
-    selected_driver = None
+    eligible_drivers = []
 
 
 
 
-    # FIND AVAILABLE DRIVER
+    # FILTER ELIGIBLE DRIVERS
     for driver in drivers:
 
         available_seats = driver[9]
@@ -363,9 +477,7 @@ def request_ride():
 
             if available_seats == 5:
 
-                selected_driver = driver
-
-                break
+                eligible_drivers.append(driver)
 
 
 
@@ -374,15 +486,13 @@ def request_ride():
 
             if available_seats >= seats_requested:
 
-                selected_driver = driver
-
-                break
+                eligible_drivers.append(driver)
 
 
 
 
-    # NO DRIVER FOUND
-    if not selected_driver:
+    # NO ELIGIBLE DRIVERS
+    if len(eligible_drivers) == 0:
 
         return jsonify({
 
@@ -393,74 +503,50 @@ def request_ride():
 
 
 
-    # DRIVER FOUND
-    driver_id = selected_driver[0]
+    # SORT BY AVAILABLE SEATS
+    # Shared rides with fewer remaining seats
+    # get higher priority first
 
-    driver_name = selected_driver[3]
+    eligible_drivers.sort(
 
-
-
-    # UPDATE AVAILABLE SEATS
-    if ride_type == "Private":
-
-        new_available = 0
-
-    else:
-
-        new_available = (
-
-            selected_driver[9]
-
-            - seats_requested
-
-        )
-
-
-
-
-    cursor.execute(
-
-        '''
-
-        UPDATE drivers
-
-        SET available_seats = ?
-
-        WHERE id = ?
-
-        ''',
-
-        (
-
-            new_available,
-
-            driver_id
-
-        )
+        key=lambda d: d[9]
 
     )
 
-    conn.commit()
+    # SAVE DRIVER QUEUE
+    driver_queue = []
+
+    for driver in eligible_drivers:
+
+        driver_queue.append(
+
+            driver[0]
+
+        )
 
 
+    # HIGHEST PRIORITY DRIVER
+    selected_driver = eligible_drivers[0]
 
+    assigned_driver_id = selected_driver[0]
 
-    # SAVE CURRENT RIDE
-    current_ride = data
+    # STORE QUEUE
+    driver_queues[booking_id] = driver_queue
 
-    ride_status = "Searching for driver..."
-
-    assigned_driver = driver_name
-
-
-
-
-    # SAVE RIDE
+    # SAVE BOOKING
     cursor.execute(
 
         '''
 
-        INSERT INTO rides (
+        INSERT INTO bookings (
+
+            booking_id,
+
+            ride_id,
+
+            passenger_id,
+
+            driver_id,
 
             pickup,
 
@@ -468,17 +554,27 @@ def request_ride():
 
             ride_type,
 
+            seats,
+
             fare,
 
             status
 
         )
 
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         ''',
 
         (
+
+            booking_id,
+
+            None,
+
+            passenger_id,
+
+            assigned_driver_id,
 
             str(pickup),
 
@@ -486,13 +582,19 @@ def request_ride():
 
             ride_type,
 
+            seats_requested,
+
             fare,
 
-            ride_status
+            "pending",
+
+            0
 
         )
 
     )
+
+
 
     conn.commit()
 
@@ -501,136 +603,340 @@ def request_ride():
 
     return jsonify({
 
-        "status": ride_status,
+        "status": "Booking Created",
 
-        "driver": driver_name,
-
-        "availableSeats": new_available
+        "booking_id": booking_id
 
     })
 
 
 
 
-# GET RIDE
+# GET DRIVER BOOKINGS
 @app.route("/get_ride")
 def get_ride():
 
-    global current_ride
-    global ride_status
-    global assigned_driver
+    # DRIVER USER ID
+    user_id = session["user_id"]
 
-    if current_ride:
+
+
+
+    # FIND DRIVER
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM drivers
+
+        WHERE user_id = ?
+
+        ''',
+
+        (user_id,)
+
+    )
+
+
+
+    driver = cursor.fetchone()
+
+
+
+
+    if not driver:
 
         return jsonify({
 
-            "ride": current_ride,
-            "status": ride_status,
-            "driver": assigned_driver
+            "ride": None
 
         })
 
+
+
+
+    driver_id = driver[0]
+
+
+
+
+    # GET PENDING BOOKING
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM bookings
+
+        WHERE driver_id = ?
+        AND status = 'pending'
+
+        LIMIT 1
+
+        ''',
+
+        (driver_id,)
+
+    )
+
+
+
+    booking = cursor.fetchone()
+
+
+
+
+    if not booking:
+
+        return jsonify({
+
+            "ride": None
+
+        })
+
+
+
+
     return jsonify({
 
-        "message": "No rides"
+        "ride": {
+
+            "booking_id": booking[1],
+
+            "pickup": booking[4],
+
+            "drop": booking[5],
+
+            "rideType": booking[6],
+
+            "seats": booking[7],
+
+            "fare": booking[8]
+
+        }
 
     })
 
 # ACCEPT RIDE
-@app.route("/accept_ride", methods=["POST"])
+@app.route(
+
+    "/accept_ride",
+
+    methods=["POST"]
+
+)
+
 def accept_ride():
 
-    global ride_status
-    global current_ride
+    data = request.json
 
-    ride_status = "Ride Accepted"
-
+    booking_id = data["booking_id"]
 
 
+
+
+    # GET BOOKING
     cursor.execute(
 
         '''
 
-        UPDATE rides
+        SELECT *
 
-        SET status = ?
+        FROM bookings
 
-        WHERE id = (
-
-            SELECT MAX(id)
-            FROM rides
-
-        )
+        WHERE booking_id = ?
 
         ''',
 
-        (ride_status,)
+        (booking_id,)
 
     )
+
+
+
+    booking = cursor.fetchone()
+
+
+
+
+    if not booking:
+
+        return jsonify({
+
+            "status": "Booking Not Found"
+
+        })
+
+
+
+
+    # ALREADY ACCEPTED
+    if booking[10] == "accepted":
+
+        return jsonify({
+
+            "status": "Already Accepted"
+
+        })
+
+
+
+
+    # ACCEPT BOOKING
+    cursor.execute(
+
+        '''
+
+        UPDATE bookings
+
+        SET status = 'accepted'
+
+        WHERE booking_id = ?
+
+        ''',
+
+        (booking_id,)
+
+    )
+
+
 
     conn.commit()
 
 
 
 
-    # CLEAR CURRENT RIDE
-    current_ride = None
-
-
-
-
     return jsonify({
 
-        "status": ride_status
+        "status": "Ride Accepted"
 
     })
 
 # REJECT RIDE
-@app.route("/reject_ride", methods=["POST"])
+@app.route(
+
+    "/reject_ride",
+
+    methods=["POST"]
+
+)
+
 def reject_ride():
 
-    global ride_status
-    global current_ride
+    data = request.json
 
-    ride_status = "Ride Rejected"
-
+    booking_id = data["booking_id"]
 
 
+
+
+    # GET QUEUE
+    queue = driver_queues.get(
+
+        booking_id,
+
+        []
+
+    )
+
+
+
+
+    # FIND BOOKING
     cursor.execute(
 
         '''
 
-        UPDATE rides
+        SELECT *
 
-        SET status = ?
+        FROM bookings
 
-        WHERE id = (
-
-            SELECT MAX(id)
-            FROM rides
-
-        )
+        WHERE booking_id = ?
 
         ''',
 
-        (ride_status,)
+        (booking_id,)
 
+    )
+
+
+
+    booking = cursor.fetchone()
+
+
+
+
+    if not booking:
+
+        return jsonify({
+
+            "status": "Booking Not Found"
+
+        })
+
+
+
+
+    current_position = booking[11]
+
+
+
+
+    # NEXT DRIVER
+    next_position = current_position + 1
+
+
+
+
+    # NO MORE DRIVERS
+    if next_position >= len(queue):
+
+        return jsonify({
+
+            "status": "No More Drivers"
+
+        })
+
+
+
+
+    next_driver_id = queue[next_position]
+
+
+
+
+    # UPDATE BOOKING
+    cursor.execute(
+
+        '''
+
+        UPDATE bookings
+
+        SET driver_id = ?,
+            queue_position = ?
+
+        WHERE booking_id = ?
+
+        ''',
+
+        (
+
+            next_driver_id,
+
+            next_position,
+
+            booking_id
+        )
     )
 
     conn.commit()
 
-
-
-
-    # CLEAR CURRENT RIDE
-    current_ride = None
-
-
-
-
     return jsonify({
 
-        "status": ride_status
+        "status": "Moved To Next Driver"
 
     })
 
@@ -1415,16 +1721,39 @@ def update_driver_location():
 
 def ride_arrived():
 
-    global ride_status
+    data = request.json
 
-    ride_status = "Driver Reached Pickup"
+    booking_id = data["booking_id"]
+
+
+
+
+    cursor.execute(
+
+        '''
+
+        UPDATE bookings
+
+        SET status = 'arrived'
+
+        WHERE booking_id = ?
+
+        ''',
+
+        (booking_id,)
+
+    )
+
+
+
+    conn.commit()
 
 
 
 
     return jsonify({
 
-        "status": ride_status
+        "status": "arrived"
 
     })
 
@@ -1439,16 +1768,39 @@ def ride_arrived():
 
 def ride_onboard():
 
-    global ride_status
+    data = request.json
 
-    ride_status = "Passenger Onboard"
+    booking_id = data["booking_id"]
+
+
+
+
+    cursor.execute(
+
+        '''
+
+        UPDATE bookings
+
+        SET status = 'onboard'
+
+        WHERE booking_id = ?
+
+        ''',
+
+        (booking_id,)
+
+    )
+
+
+
+    conn.commit()
 
 
 
 
     return jsonify({
 
-        "status": ride_status
+        "status": "onboard"
 
     })
 
@@ -1463,74 +1815,163 @@ def ride_onboard():
 
 def complete_ride():
 
-    global ride_status
-    global current_ride
+    data = request.json
+
+    booking_id = data["booking_id"]
 
 
 
 
-    # GET LAST DRIVER
+    # GET BOOKING
     cursor.execute(
 
         '''
 
         SELECT *
 
-        FROM drivers
+        FROM bookings
 
-        WHERE first_name = ?
+        WHERE booking_id = ?
 
         ''',
 
-        (assigned_driver,)
+        (booking_id,)
 
     )
 
 
 
-    driver = cursor.fetchone()
+    booking = cursor.fetchone()
+
+
+
+
+    if not booking:
+
+        return jsonify({
+
+            "status": "Booking Not Found"
+
+        })
+
+
+
+
+    seats_to_restore = booking[8]
+
+    driver_id = booking[4]
+
+
+
+
+    # UPDATE BOOKING STATUS
+    cursor.execute(
+
+        '''
+
+        UPDATE bookings
+
+        SET status = 'completed'
+
+        WHERE booking_id = ?
+
+        ''',
+
+        (booking_id,)
+
+    )
 
 
 
 
     # RESTORE SEATS
-    if driver:
+    cursor.execute(
 
-        cursor.execute(
+        '''
 
-            '''
+        UPDATE drivers
 
-            UPDATE drivers
+        SET available_seats =
 
-            SET available_seats = 5
+            available_seats + ?
 
-            WHERE id = ?
+        WHERE id = ?
 
-            ''',
+        ''',
 
-            (driver[0],)
+        (
+
+            seats_to_restore,
+
+            driver_id
 
         )
 
-        conn.commit()
+    )
 
 
 
-
-    ride_status = "Ride Completed"
-
-
-
-
-    # CLEAR ACTIVE RIDE
-    current_ride = None
+    conn.commit()
 
 
 
 
     return jsonify({
 
-        "status": ride_status
+        "status": "completed"
+
+    })
+
+# BOOKING STATUS
+@app.route(
+
+    "/booking_status/<booking_id>"
+
+)
+
+def booking_status(
+
+    booking_id
+
+):
+
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM bookings
+
+        WHERE booking_id = ?
+
+        ''',
+
+        (booking_id,)
+
+    )
+
+
+
+    booking = cursor.fetchone()
+
+
+
+
+    if not booking:
+
+        return jsonify({
+
+            "status": "Not Found"
+
+        })
+
+
+
+
+    return jsonify({
+
+        "status": booking[10]
 
     })
 
