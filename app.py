@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash
 from werkzeug.security import check_password_hash
 from flask import session
 from flask import Flask, request, jsonify, render_template, redirect
+from datetime import datetime, timedelta
 import sqlite3
 
 app = Flask(__name__)
@@ -173,7 +174,30 @@ CREATE TABLE IF NOT EXISTS bookings (
 
     status TEXT,
 
-    queue_position INTEGER DEFAULT 0
+    queue_position INTEGER DEFAULT 0,
+               
+    assigned_time TEXT
+
+)
+
+''')
+
+conn.commit()
+
+# DISPATCH HISTORY
+cursor.execute('''
+
+CREATE TABLE IF NOT EXISTS dispatch_history (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    booking_id TEXT,
+
+    driver_id INTEGER,
+
+    reject_count INTEGER DEFAULT 0,
+
+    blocked_until TEXT
 
 )
 
@@ -462,11 +486,65 @@ def request_ride():
 
     eligible_drivers = []
 
-
-
-
     # FILTER ELIGIBLE DRIVERS
     for driver in drivers:
+
+        driver_id = driver[0]
+
+
+
+        # CHECK DRIVER BLOCK
+        cursor.execute(
+
+            '''
+
+            SELECT *
+
+            FROM dispatch_history
+
+            WHERE driver_id = ?
+
+            ORDER BY id DESC
+
+            LIMIT 1
+
+            ''',
+
+            (driver_id,)
+
+        )
+
+
+
+        history = cursor.fetchone()
+
+
+
+
+        # DRIVER TEMP BLOCKED
+        if history:
+
+            blocked_until = history[4]
+
+
+
+            if blocked_until:
+
+                blocked_dt = datetime.fromisoformat(
+
+                    blocked_until
+
+                )
+
+
+
+                # STILL BLOCKED
+                if datetime.now() < blocked_dt:
+
+                    continue
+
+
+
 
         available_seats = driver[9]
 
@@ -481,6 +559,7 @@ def request_ride():
 
 
 
+
         # SHARED RIDE
         else:
 
@@ -488,9 +567,7 @@ def request_ride():
 
                 eligible_drivers.append(driver)
 
-
-
-
+    
     # NO ELIGIBLE DRIVERS
     if len(eligible_drivers) == 0:
 
@@ -588,7 +665,9 @@ def request_ride():
 
             "pending",
 
-            0
+            0,
+
+            datetime.now().isoformat()
 
         )
 
@@ -888,6 +967,7 @@ def reject_ride():
 
 
     booking = cursor.fetchone()
+    driver_id = booking[4]
 
 
 
@@ -906,13 +986,125 @@ def reject_ride():
     current_position = booking[11]
 
 
+    # CHECK DISPATCH HISTORY
+    cursor.execute(
 
+        '''
+
+        SELECT *
+
+        FROM dispatch_history
+
+        WHERE booking_id = ?
+        AND driver_id = ?
+
+        ''',
+
+        (
+
+            booking_id,
+
+            driver_id
+
+        )
+
+    )
+
+    history = cursor.fetchone()
+
+
+
+
+    # HISTORY EXISTS
+    if history:
+
+        reject_count = history[3] + 1
+
+
+
+
+        # BLOCK AFTER 2 REJECTS
+        blocked_until = None
+
+        if reject_count >= 2:
+
+            blocked_until = (
+
+                datetime.now()
+
+                + timedelta(minutes=30)
+
+            ).isoformat()
+
+
+
+
+        cursor.execute(
+
+            '''
+
+            UPDATE dispatch_history
+
+            SET reject_count = ?,
+                blocked_until = ?
+
+            WHERE id = ?
+
+            ''',
+
+            (
+
+                reject_count,
+
+                blocked_until,
+
+                history[0]
+
+            )
+
+        )
+
+    # FIRST REJECTION
+    else:
+
+        cursor.execute(
+
+            '''
+
+            INSERT INTO dispatch_history (
+
+                booking_id,
+
+                driver_id,
+
+                reject_count,
+
+                blocked_until
+
+            )
+
+            VALUES (?, ?, ?, ?)
+
+            ''',
+
+            (
+
+                booking_id,
+
+                driver_id,
+
+                1,
+
+                None
+
+            )
+
+        )
+
+    conn.commit()
 
     # NEXT DRIVER
     next_position = current_position + 1
-
-
-
 
     # NO MORE DRIVERS
     if next_position >= len(queue):
@@ -1995,6 +2187,142 @@ def booking_status(
     return jsonify({
 
         "status": booking[10]
+
+    })
+
+# CHECK BOOKING TIMEOUT
+@app.route("/check_timeout")
+def check_timeout():
+
+    from datetime import datetime
+
+
+
+
+    # GET PENDING BOOKINGS
+    cursor.execute(
+
+        '''
+
+        SELECT *
+
+        FROM bookings
+
+        WHERE status = 'pending'
+
+        '''
+
+    )
+
+
+
+    bookings = cursor.fetchall()
+
+
+
+
+    for booking in bookings:
+
+        booking_id = booking[1]
+
+        assigned_time = booking[12]
+
+
+
+
+        if not assigned_time:
+
+            continue
+
+
+
+
+        assigned_dt = datetime.fromisoformat(
+
+            assigned_time
+
+        )
+
+
+
+        now = datetime.now()
+
+
+
+
+        seconds = (
+
+            now - assigned_dt
+
+        ).total_seconds()
+
+
+
+
+        # 45 SECOND TIMEOUT
+        if seconds >= 45:
+
+            queue = driver_queues.get(
+
+                booking_id,
+
+                []
+
+            )
+
+
+
+
+            current_position = booking[11]
+
+            next_position = current_position + 1
+
+
+
+
+            # NEXT DRIVER EXISTS
+            if next_position < len(queue):
+
+                next_driver_id = queue[next_position]
+
+
+
+
+                cursor.execute(
+
+                    '''
+
+                    UPDATE bookings
+
+                    SET driver_id = ?,
+                        queue_position = ?,
+                        assigned_time = ?
+
+                    WHERE booking_id = ?
+
+                    ''',
+
+                    (
+
+                        next_driver_id,
+
+                        next_position,
+
+                        datetime.now().isoformat(),
+
+                        booking_id
+
+                    )
+
+                )
+
+
+
+                conn.commit()
+
+    return jsonify({
+
+        "status": "Timeout Check Complete"
 
     })
 

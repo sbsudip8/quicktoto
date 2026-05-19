@@ -653,3 +653,19 @@ setInterval(
     2000
 
 );
+
+setInterval(
+
+    async () => {
+
+        await fetch(
+
+            "/check_timeout"
+
+        );
+
+    },
+
+    5000
+
+);
