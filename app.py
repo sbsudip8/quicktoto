@@ -376,13 +376,13 @@ def driver():
 
     return render_template(
 
-        "driver.html",
+        "driver_dashboard.html",
 
         driver=driver_data
 
     )
 
-    return render_template("driver.html")
+    return render_template("driver_dashboard.html")
 
 
 

@@ -1,9 +1,4 @@
-const toggleBtn = document.getElementById(
-
-    "toggleBtn"
-
-);
-
+// DRIVER STATE
 let isOnline = false;
 
 let rideAccepted = false;
@@ -11,134 +6,267 @@ let rideAccepted = false;
 
 
 
-// TOGGLE ONLINE/OFFLINE
-toggleBtn.onclick = async () => {
-
-    // TOGGLE STATE
-    isOnline = !isOnline;
+// BUTTON
+let toggleBtn;
 
 
 
 
-    // SEND TO BACKEND
-    await fetch(
+// DRIVER MAP
+let driverMap;
 
-        "/toggle_driver_status",
+let passengerMarker = null;
 
-        {
+let routeControl = null;
 
-            method: "POST",
-
-            headers: {
-
-                "Content-Type": "application/json"
-
-            },
-
-            body: JSON.stringify({
-
-                online: isOnline
-
-            })
-
-        }
-
-    );
+let driverMarker = null;
 
 
 
 
-    // ONLINE
-    if (isOnline) {
+// DRIVER GPS
+let currentDriverLat = null;
 
-        // START GPS
-        startDriverGPS();
-
-
-
-
-        // UPDATE STATUS
-        document.getElementById(
-
-            "availabilityText"
-
-        ).innerText =
-
-            "Status: Online";
-
-
-
-        toggleBtn.innerText =
-
-            "🔴 Go Offline";
+let currentDriverLng = null;
 
 
 
 
-        // WAITING UI
-        document.getElementById(
+// DRIVER ICON
+const driverIcon = L.icon({
 
-            "rideContainer"
+    iconUrl:
 
-        ).innerHTML = `
+        "https://cdn-icons-png.flaticon.com/512/744/744465.png",
 
-            <h3>
+    iconSize: [35, 35],
 
-                Waiting for Ride...
+    iconAnchor: [17, 35]
 
-            </h3>
-
-        `;
+});
 
 
 
 
-        // CHECK RIDES IMMEDIATELY
-        fetchRide();
+// PASSENGER ICON
+const passengerIcon = L.icon({
+
+    iconUrl:
+
+        "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+
+    iconSize: [35, 35],
+
+    iconAnchor: [17, 35]
+
+});
+
+
+
+
+document.addEventListener(
+
+    "DOMContentLoaded",
+
+    () => {
+
+        // BUTTON
+        toggleBtn = document.getElementById(
+
+            "toggleBtn"
+
+        );
+
+
+
+
+        console.log(
+
+            "Toggle button loaded"
+
+        );
+
+
+
+
+        // INITIALIZE DRIVER MAP
+        driverMap = L.map(
+
+            "driverMap"
+
+        ).setView(
+
+            [26.7271, 88.3953],
+
+            13
+
+        );
+
+
+
+
+        // TILE LAYER
+        L.tileLayer(
+
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+            {
+
+                attribution:
+
+                    "&copy; OpenStreetMap contributors"
+
+            }
+
+        ).addTo(driverMap);
+
+
+
+
+        // TOGGLE BUTTON
+        toggleBtn.addEventListener(
+
+            "click",
+
+            async () => {
+
+                console.log(
+
+                    "Button clicked"
+
+                );
+
+
+
+
+                // TOGGLE STATE
+                isOnline = !isOnline;
+
+
+
+
+                // SEND TO BACKEND
+                await fetch(
+
+                    "/toggle_driver_status",
+
+                    {
+
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type": "application/json"
+
+                        },
+
+                        body: JSON.stringify({
+
+                            online: isOnline
+
+                        })
+
+                    }
+
+                );
+
+
+
+
+                // ONLINE
+                if (isOnline) {
+
+                    startDriverGPS();
+
+
+
+
+                    document.getElementById(
+
+                        "availabilityText"
+
+                    ).innerText =
+
+                        "Status: Online";
+
+
+
+
+                    toggleBtn.innerText =
+
+                        "🔴 Go Offline";
+
+
+
+
+                    document.getElementById(
+
+                        "rideContainer"
+
+                    ).innerHTML = `
+
+                        <h3>
+
+                            Waiting for Ride...
+
+                        </h3>
+
+                    `;
+
+
+
+
+                    fetchRide();
+
+                }
+
+
+
+
+                // OFFLINE
+                else {
+
+                    document.getElementById(
+
+                        "availabilityText"
+
+                    ).innerText =
+
+                        "Status: Offline";
+
+
+
+
+                    toggleBtn.innerText =
+
+                        "🟢 Go Online";
+
+
+
+
+                    document.getElementById(
+
+                        "rideContainer"
+
+                    ).innerHTML = `
+
+                        <h3>
+
+                            🔴 You are offline
+
+                        </h3>
+
+                    `;
+
+                }
+
+            }
+
+        );
 
     }
 
-
-
-
-    // OFFLINE
-    else {
-
-        document.getElementById(
-
-            "availabilityText"
-
-        ).innerText =
-
-            "Status: Offline";
-
-
-
-        toggleBtn.innerText =
-
-            "🟢 Go Online";
-
-
-
-
-        // OFFLINE UI
-        document.getElementById(
-
-            "rideContainer"
-
-        ).innerHTML = `
-
-            <h3>
-
-                🔴 You are offline
-
-            </h3>
-
-        `;
-
-    }
-
-};
+);
 
 
 
@@ -153,6 +281,76 @@ function startDriverGPS() {
             let lat = position.coords.latitude;
 
             let lng = position.coords.longitude;
+
+
+
+
+            // SAVE DRIVER LOCATION
+            currentDriverLat = lat;
+
+            currentDriverLng = lng;
+
+
+
+
+            // REMOVE OLD DRIVER MARKER
+            if (driverMarker) {
+
+                driverMap.removeLayer(
+
+                    driverMarker
+
+                );
+
+            }
+
+
+
+
+            // DRIVER MARKER
+            driverMarker = L.marker(
+
+                [
+
+                    lat,
+
+                    lng
+
+                ],
+
+                {
+
+                    icon: driverIcon
+
+                }
+
+            )
+
+            .addTo(driverMap)
+
+            .bindPopup(
+
+                "🚖 Your Location"
+
+            );
+
+
+
+
+            // MOVE MAP
+            driverMap.setView(
+
+                [
+
+                    lat,
+
+                    lng
+
+                ],
+
+                14
+
+            );
 
 
 
@@ -196,7 +394,7 @@ function startDriverGPS() {
 // FETCH RIDES
 async function fetchRide() {
 
-    // ONLY ONLINE DRIVERS
+    // ONLY ONLINE
     if (!isOnline) {
 
         return;
@@ -205,12 +403,14 @@ async function fetchRide() {
 
 
 
-    // IF CURRENT RIDE ACTIVE
+
+    // ACTIVE RIDE
     if (rideAccepted) {
 
         return;
 
     }
+
 
 
 
@@ -227,7 +427,7 @@ async function fetchRide() {
 
 
 
-    // IF RIDE EXISTS
+    // RIDE EXISTS
     if (data.ride) {
 
         document.getElementById(
@@ -293,6 +493,164 @@ async function fetchRide() {
 
 
 
+        // PASSENGER PICKUP
+        let pickup = data.ride.pickup;
+
+
+
+
+        // REMOVE OLD PASSENGER MARKER
+        if (passengerMarker) {
+
+            driverMap.removeLayer(
+
+                passengerMarker
+
+            );
+
+        }
+
+
+
+
+        // PASSENGER MARKER
+        passengerMarker = L.marker(
+
+            [
+
+                pickup.lat,
+
+                pickup.lng
+
+            ],
+
+            {
+
+                icon: passengerIcon
+
+            }
+
+        )
+
+        .addTo(driverMap)
+
+        .bindPopup(
+
+            "📍 Passenger Pickup"
+
+        )
+
+        .openPopup();
+
+
+
+
+        // REMOVE OLD ROUTE
+        if (routeControl) {
+
+            driverMap.removeControl(
+
+                routeControl
+
+            );
+
+        }
+
+
+
+
+        // DRAW ROUTE
+        if (
+
+            currentDriverLat &&
+
+            currentDriverLng
+
+        ) {
+
+            routeControl = L.Routing.control({
+
+                waypoints: [
+
+                    L.latLng(
+
+                        currentDriverLat,
+
+                        currentDriverLng
+
+                    ),
+
+                    L.latLng(
+
+                        pickup.lat,
+
+                        pickup.lng
+
+                    )
+
+                ],
+
+
+
+
+                lineOptions: {
+
+                    styles: [
+
+                        {
+
+                            color: "blue",
+
+                            opacity: 0.8,
+
+                            weight: 6
+
+                        }
+
+                    ]
+
+                },
+
+
+
+
+                routeWhileDragging: false,
+
+                draggableWaypoints: false,
+
+                addWaypoints: false,
+
+                fitSelectedRoutes: true,
+
+                show: false,
+
+                createMarker: () => null
+
+            }).addTo(driverMap);
+
+        }
+
+
+
+
+        // MOVE MAP
+        driverMap.setView(
+
+            [
+
+                pickup.lat,
+
+                pickup.lng
+
+            ],
+
+            14
+
+        );
+
+
+
+
         // ACCEPT BUTTON
         document.getElementById(
 
@@ -331,6 +689,7 @@ async function fetchRide() {
 
 
 
+            // ALREADY TAKEN
             if (
 
                 result.status ===
@@ -350,6 +709,7 @@ async function fetchRide() {
                 return;
 
             }
+
 
 
 
@@ -476,6 +836,8 @@ async function fetchRide() {
 
                 );
 
+
+
                 alert(
 
                     "Passenger Onboard"
@@ -547,7 +909,21 @@ async function fetchRide() {
 
 
 
-                // ALLOW NEW RIDES
+                // REMOVE ROUTE
+                if (routeControl) {
+
+                    driverMap.removeControl(
+
+                        routeControl
+
+                    );
+
+                }
+
+
+
+
+                // RESET STATE
                 rideAccepted = false;
 
             };
@@ -614,6 +990,20 @@ async function fetchRide() {
 
             `;
 
+
+
+
+            // REMOVE ROUTE
+            if (routeControl) {
+
+                driverMap.removeControl(
+
+                    routeControl
+
+                );
+
+            }
+
         };
 
     }
@@ -621,7 +1011,7 @@ async function fetchRide() {
 
 
 
-    // NO RIDE FOUND
+    // NO RIDE
     else {
 
         document.getElementById(
@@ -645,15 +1035,68 @@ async function fetchRide() {
 
 
 
-// CHECK RIDES EVERY 2 SECONDS
-setInterval(
+// CHECK RIDES
+window.onload = () => {
 
-    fetchRide,
+    // BUTTON
+    toggleBtn = document.getElementById(
 
-    2000
+        "toggleBtn"
 
-);
+    );
 
+
+
+
+    // INITIALIZE DRIVER MAP
+    driverMap = L.map(
+
+        "driverMap"
+
+    ).setView(
+
+        [26.7271, 88.3953],
+
+        13
+
+    );
+
+
+
+
+    // TILE LAYER
+    L.tileLayer(
+
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+        {
+
+            attribution:
+
+                "&copy; OpenStreetMap contributors"
+
+        }
+
+    ).addTo(driverMap);
+
+
+
+
+    // START FETCH LOOP
+    setInterval(
+
+        fetchRide,
+
+        2000
+
+    );
+
+};
+
+
+
+
+// CHECK TIMEOUTS
 setInterval(
 
     async () => {

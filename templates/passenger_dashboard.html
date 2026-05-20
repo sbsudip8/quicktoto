@@ -11,14 +11,20 @@
     <title>Quicktoto</title>
 
 
+
+
     <!-- LEAFLET CSS -->
     <link rel="stylesheet"
         href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
 
+
+
     <!-- LEAFLET ROUTING -->
     <link rel="stylesheet"
         href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+
+
 
 
     <!-- YOUR CSS -->
@@ -29,57 +35,70 @@
 
 <body>
 
+
+
+
     <!-- HEADER -->
     <div class="header">
 
-    <div class="topbar">
+        <div class="topbar">
 
-        <div>
+            <div>
 
-            <h1>🚖 Quicktoto</h1>
+                <h1>
 
-        </div>
+                    🚖 Quicktoto
 
+                </h1>
 
-
-        <!-- USER MENU -->
-        <div class="dropdown">
-
-            <button class="dropbtn">
-
-                Welcome,
-
-                {{ user[1] }}
-
-                ▼
-
-            </button>
+            </div>
 
 
 
-            <div class="dropdown-content">
 
-                <a href="#">
+            <!-- USER MENU -->
+            <div class="dropdown">
 
-                    Profile
+                <button class="dropbtn">
 
-                </a>
+                    Welcome,
 
+                    {{ user[1] }}
 
+                    ▼
 
-                <a href="#">
-
-                    Ride History
-
-                </a>
+                </button>
 
 
 
-                <a href="/logout">
 
-                    Logout
+                <div class="dropdown-content">
 
-                </a>
+                    <a href="#">
+
+                        Profile
+
+                    </a>
+
+
+
+
+                    <a href="#">
+
+                        Ride History
+
+                    </a>
+
+
+
+
+                    <a href="/logout">
+
+                        Logout
+
+                    </a>
+
+                </div>
 
             </div>
 
@@ -87,27 +106,67 @@
 
     </div>
 
-</div>
 
 
 
     <!-- MAIN CONTAINER -->
     <div class="container">
 
+
+
+
         <!-- SIDEBAR -->
         <div class="sidebar">
 
-            <!-- GPS BUTTON -->
-            <button id="gpsBtn">
-
-                📍 Get Pickup Location
-
-            </button>
 
 
 
-            <!-- LOCATION INFO -->
-            <div class="info-box">
+            <!-- PICKUP SEARCH -->
+            <div class="search-box">
+
+                <h3>
+
+                    Pickup Location
+
+                </h3>
+
+
+
+
+                <div class="search-input-group">
+
+                    <input
+
+                        type="text"
+
+                        id="pickupSearch"
+
+                        placeholder="Search pickup location"
+
+                    >
+
+
+
+
+                    <button id="pickupSearchBtn">
+
+                        🔍
+
+                    </button>
+
+                </div>
+
+
+
+
+                <button id="gpsBtn">
+
+                    📍 Use My Current Location
+
+                </button>
+
+
+
 
                 <p>
 
@@ -120,6 +179,48 @@
                     </span>
 
                 </p>
+
+            </div>
+
+
+
+
+            <!-- DROP SEARCH -->
+            <div class="search-box">
+
+                <h3>
+
+                    Drop Location
+
+                </h3>
+
+
+
+
+                <div class="search-input-group">
+
+                    <input
+
+                        type="text"
+
+                        id="dropSearch"
+
+                        placeholder="Search drop location"
+
+                    >
+
+
+
+
+                    <button id="dropSearchBtn">
+
+                        🔍
+
+                    </button>
+
+                </div>
+
+
 
 
                 <p>
@@ -138,10 +239,18 @@
 
 
 
+
             <!-- RIDE TYPE -->
             <div class="ride-type">
 
-                <h3>Ride Type</h3>
+                <h3>
+
+                    Ride Type
+
+                </h3>
+
+
+
 
                 <label>
 
@@ -154,7 +263,13 @@
 
                 </label>
 
+
+
+
                 <br><br>
+
+
+
 
                 <label>
 
@@ -168,6 +283,9 @@
 
             </div>
 
+
+
+
             <!-- SEAT SELECTION -->
             <div class="fare-box">
 
@@ -176,6 +294,7 @@
                     Number of Seats
 
                 </h3>
+
 
 
 
@@ -188,24 +307,54 @@
 
                 >
 
-                    <option value="1">1 Seat</option>
+                    <option value="1">
 
-                    <option value="2">2 Seats</option>
+                        1 Seat
 
-                    <option value="3">3 Seats</option>
+                    </option>
 
-                    <option value="4">4 Seats</option>
+                    <option value="2">
 
-                    <option value="5">5 Seats</option>
+                        2 Seats
+
+                    </option>
+
+                    <option value="3">
+
+                        3 Seats
+
+                    </option>
+
+                    <option value="4">
+
+                        4 Seats
+
+                    </option>
+
+                    <option value="5">
+
+                        5 Seats
+
+                    </option>
 
                 </select>
 
             </div>
 
+
+
+
             <!-- FARE -->
             <div class="fare-box">
 
-                <h3>Estimated Fare</h3>
+                <h3>
+
+                    Estimated Fare
+
+                </h3>
+
+
+
 
                 <p id="fareText">
 
@@ -217,10 +366,18 @@
 
 
 
+
             <!-- STATUS -->
             <div class="status-box">
 
-                <h3>Ride Status</h3>
+                <h3>
+
+                    Ride Status
+
+                </h3>
+
+
+
 
                 <p id="rideStatus">
 
@@ -228,9 +385,13 @@
 
                 </p>
 
+
+
+
                 <p id="driverInfo"></p>
 
             </div>
+
 
 
 
@@ -245,6 +406,7 @@
 
 
 
+
         <!-- MAP -->
         <div id="map"></div>
 
@@ -252,12 +414,17 @@
 
 
 
+
     <!-- LEAFLET JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 
+
+
     <!-- ROUTING JS -->
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+
 
 
     <!-- YOUR JS -->

@@ -1,38 +1,522 @@
+// MAP VARIABLES
 let map;
-
-let pickupMarker;
-let dropMarker;
 
 let pickupLocation = null;
 let dropLocation = null;
 
-let routingControl;
+let pickupMarker = null;
+let dropMarker = null;
 
+let routingControl = null;
 
-// REAL DRIVER MARKERS
 let driverMarkers = [];
 
 
-const gpsBtn = document.getElementById("gpsBtn");
-const requestBtn = document.getElementById("requestBtn");
+
+
+// DRIVER ICON
+const driverIcon = L.icon({
+
+    iconUrl:
+
+        "https://cdn-icons-png.flaticon.com/512/744/744465.png",
+
+    iconSize: [35, 35],
+
+    iconAnchor: [17, 35]
+
+});
 
 
 
 
-// GET GPS LOCATION
-gpsBtn.onclick = () => {
+// PICKUP ICON
+const pickupIcon = L.icon({
+
+    iconUrl:
+
+        "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+
+    iconSize: [35, 35],
+
+    iconAnchor: [17, 35]
+
+});
+
+
+
+
+// DROP ICON
+const dropIcon = L.icon({
+
+    iconUrl:
+
+        "https://cdn-icons-png.flaticon.com/512/2776/2776067.png",
+
+    iconSize: [35, 35],
+
+    iconAnchor: [17, 35]
+
+});
+
+
+
+
+// INITIALIZE MAP
+map = L.map(
+
+    "map"
+
+).setView(
+
+    [26.7271, 88.3953],
+
+    13
+
+);
+
+
+
+
+// TILE LAYER
+L.tileLayer(
+
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+    {
+
+        attribution:
+
+            "&copy; OpenStreetMap contributors"
+
+    }
+
+).addTo(map);
+
+
+
+
+// PICKUP SEARCH FUNCTION
+async function searchPickup() {
+
+    let location = document.getElementById(
+
+        "pickupSearch"
+
+    ).value;
+
+
+
+
+    if (!location) {
+
+        return;
+
+    }
+
+
+
+
+    let response = await fetch(
+
+        `https://nominatim.openstreetmap.org/search?format=json&q=${location}`
+
+    );
+
+
+
+    let data = await response.json();
+
+
+
+
+    if (data.length > 0) {
+
+        pickupLocation = {
+
+            lat: parseFloat(data[0].lat),
+
+            lng: parseFloat(data[0].lon)
+
+        };
+
+
+
+
+        // REMOVE OLD PICKUP
+        if (pickupMarker) {
+
+            map.removeLayer(
+
+                pickupMarker
+
+            );
+
+        }
+
+
+
+
+        // NEW PICKUP MARKER
+        pickupMarker = L.marker(
+
+            [
+
+                pickupLocation.lat,
+
+                pickupLocation.lng
+
+            ],
+
+            {
+
+                icon: pickupIcon
+
+            }
+
+        )
+
+        .addTo(map)
+
+        .bindPopup(
+
+            "📍 Pickup Location"
+
+        )
+
+        .openPopup();
+
+
+
+
+        // UPDATE UI
+        document.getElementById(
+
+            "pickupText"
+
+        ).innerText = location;
+
+
+
+
+        // MOVE MAP
+        map.setView(
+
+            [
+
+                pickupLocation.lat,
+
+                pickupLocation.lng
+
+            ],
+
+            15
+
+        );
+
+
+
+
+        // DRAW ROUTE
+        if (dropLocation) {
+
+            drawRoute();
+
+            updateFare();
+
+        }
+
+    }
+
+    else {
+
+        alert(
+
+            "Location not found"
+
+        );
+
+    }
+
+}
+
+
+
+
+// DROP SEARCH FUNCTION
+async function searchDrop() {
+
+    let location = document.getElementById(
+
+        "dropSearch"
+
+    ).value;
+
+
+
+
+    if (!location) {
+
+        return;
+
+    }
+
+
+
+
+    let response = await fetch(
+
+        `https://nominatim.openstreetmap.org/search?format=json&q=${location}`
+
+    );
+
+
+
+    let data = await response.json();
+
+
+
+
+    if (data.length > 0) {
+
+        dropLocation = {
+
+            lat: parseFloat(data[0].lat),
+
+            lng: parseFloat(data[0].lon)
+
+        };
+
+
+
+
+        // REMOVE OLD DROP
+        if (dropMarker) {
+
+            map.removeLayer(
+
+                dropMarker
+
+            );
+
+        }
+
+
+
+
+        // NEW DROP MARKER
+        dropMarker = L.marker(
+
+            [
+
+                dropLocation.lat,
+
+                dropLocation.lng
+
+            ],
+
+            {
+
+                icon: dropIcon
+
+            }
+
+        )
+
+        .addTo(map)
+
+        .bindPopup(
+
+            "🏁 Drop Location"
+
+        )
+
+        .openPopup();
+
+
+
+
+        // UPDATE UI
+        document.getElementById(
+
+            "dropText"
+
+        ).innerText = location;
+
+
+
+
+        // DRAW ROUTE
+        if (pickupLocation) {
+
+            drawRoute();
+
+            updateFare();
+
+        }
+
+    }
+
+    else {
+
+        alert(
+
+            "Location not found"
+
+        );
+
+    }
+
+}
+
+
+
+
+// PICKUP SEARCH BUTTON
+document.getElementById(
+
+    "pickupSearchBtn"
+
+).onclick = searchPickup;
+
+
+
+
+// DROP SEARCH BUTTON
+document.getElementById(
+
+    "dropSearchBtn"
+
+).onclick = searchDrop;
+
+
+
+
+// ENTER KEY FOR PICKUP
+document.getElementById(
+
+    "pickupSearch"
+
+).addEventListener(
+
+    "keypress",
+
+    function(e) {
+
+        if (e.key === "Enter") {
+
+            searchPickup();
+
+        }
+
+    }
+
+);
+
+
+
+
+// ENTER KEY FOR DROP
+document.getElementById(
+
+    "dropSearch"
+
+).addEventListener(
+
+    "keypress",
+
+    function(e) {
+
+        if (e.key === "Enter") {
+
+            searchDrop();
+
+        }
+
+    }
+
+);
+
+
+
+
+// GPS BUTTON
+document.getElementById(
+
+    "gpsBtn"
+
+).onclick = () => {
 
     navigator.geolocation.getCurrentPosition(
 
         position => {
 
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
+            let lat = position.coords.latitude;
 
-            pickupLocation = { lat, lng };
-
+            let lng = position.coords.longitude;
 
 
+
+
+            // SAVE PICKUP
+            pickupLocation = {
+
+                lat: lat,
+
+                lng: lng
+
+            };
+
+
+
+
+            // REMOVE OLD PICKUP
+            if (pickupMarker) {
+
+                map.removeLayer(
+
+                    pickupMarker
+
+                );
+
+            }
+
+
+
+
+            // PICKUP MARKER
+            pickupMarker = L.marker(
+
+                [
+
+                    lat,
+
+                    lng
+
+                ],
+
+                {
+
+                    icon: pickupIcon
+
+                }
+
+            )
+
+            .addTo(map)
+
+            .bindPopup(
+
+                "📍 You are here"
+
+            )
+
+            .openPopup();
+
+
+
+
+            // UPDATE UI
             document.getElementById(
 
                 "pickupText"
@@ -48,7 +532,26 @@ gpsBtn.onclick = () => {
 
 
 
-            initMap(lat, lng);
+            // MOVE MAP
+            map.setView(
+
+                [lat, lng],
+
+                15
+
+            );
+
+
+
+
+            // DRAW ROUTE
+            if (dropLocation) {
+
+                drawRoute();
+
+                updateFare();
+
+            }
 
         }
 
@@ -59,61 +562,24 @@ gpsBtn.onclick = () => {
 
 
 
-// INITIALIZE MAP
-function initMap(lat, lng) {
+// CLICK MAP TO SET DROP
+map.on(
 
-    // REMOVE OLD MAP
-    if (map) {
+    "click",
 
-        map.remove();
-
-    }
-
-
-
-    // CREATE MAP
-    map = L.map('map').setView([lat, lng], 15);
-
-
-
-
-    // TILE LAYER
-    L.tileLayer(
-
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-
-        {
-
-            attribution: '© OpenStreetMap'
-
-        }
-
-    ).addTo(map);
-
-
-
-
-    // PICKUP MARKER
-    pickupMarker = L.marker([lat, lng])
-
-        .addTo(map)
-
-        .bindPopup("📍 You are here")
-
-        .openPopup();
-
-
-
-
-    // CLICK TO SET DROP
-    map.on('click', function(e) {
+    function(e) {
 
         // REMOVE OLD DROP
         if (dropMarker) {
 
-            map.removeLayer(dropMarker);
+            map.removeLayer(
+
+                dropMarker
+
+            );
 
         }
+
 
 
 
@@ -121,6 +587,7 @@ function initMap(lat, lng) {
         dropLocation = {
 
             lat: e.latlng.lat,
+
             lng: e.latlng.lng
 
         };
@@ -129,16 +596,31 @@ function initMap(lat, lng) {
 
 
         // DROP MARKER
-        dropMarker = L.marker([
+        dropMarker = L.marker(
 
-            dropLocation.lat,
-            dropLocation.lng
+            [
 
-        ])
+                dropLocation.lat,
+
+                dropLocation.lng
+
+            ],
+
+            {
+
+                icon: dropIcon
+
+            }
+
+        )
 
         .addTo(map)
 
-        .bindPopup("🏁 Drop Location")
+        .bindPopup(
+
+            "🏁 Drop Location"
+
+        )
 
         .openPopup();
 
@@ -162,33 +644,17 @@ function initMap(lat, lng) {
 
 
         // DRAW ROUTE
-        drawRoute();
+        if (pickupLocation) {
 
+            drawRoute();
 
+            updateFare();
 
-        // UPDATE FARE
-        updateFare();
+        }
 
-    });
+    }
 
-
-
-
-    // LOAD ONLINE DRIVERS
-    loadOnlineDrivers();
-
-
-
-    // REFRESH DRIVERS
-    setInterval(
-
-        loadOnlineDrivers,
-
-        5000
-
-    );
-
-}
+);
 
 
 
@@ -199,9 +665,14 @@ function drawRoute() {
     // REMOVE OLD ROUTE
     if (routingControl) {
 
-        map.removeControl(routingControl);
+        map.removeControl(
+
+            routingControl
+
+        );
 
     }
+
 
 
 
@@ -241,12 +712,23 @@ function drawRoute() {
 
 
 // DISTANCE CALCULATION
-function calculateDistance(lat1, lng1, lat2, lng2) {
+function calculateDistance(
+
+    lat1,
+    lng1,
+    lat2,
+    lng2
+
+) {
 
     let dx = lat1 - lat2;
     let dy = lng1 - lng2;
 
-    return Math.sqrt(dx * dx + dy * dy);
+    return Math.sqrt(
+
+        dx * dx + dy * dy
+
+    );
 
 }
 
@@ -256,11 +738,18 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
 // UPDATE FARE
 function updateFare() {
 
-    if (!pickupLocation || !dropLocation) {
+    if (
+
+        !pickupLocation ||
+
+        !dropLocation
+
+    ) {
 
         return;
 
     }
+
 
 
 
@@ -273,6 +762,7 @@ function updateFare() {
         dropLocation.lng
 
     );
+
 
 
 
@@ -296,6 +786,7 @@ function updateFare() {
 
 
 
+
     if (rideType === "Private") {
 
         fare = 30 + (distance * 10);
@@ -310,7 +801,12 @@ function updateFare() {
 
 
 
-    fare = Math.round(fare);
+
+    fare = Math.round(
+
+        fare
+
+    );
 
 
 
@@ -335,7 +831,7 @@ document.querySelectorAll(
 
     radio.addEventListener(
 
-        'change',
+        "change",
 
         updateFare
 
@@ -346,10 +842,26 @@ document.querySelectorAll(
 
 
 
+// REQUEST BUTTON
+let requestBtn = document.getElementById(
+
+    "requestBtn"
+
+);
+
+
+
+
 // REQUEST RIDE
 requestBtn.onclick = async () => {
 
-    if (!pickupLocation || !dropLocation) {
+    if (
+
+        !pickupLocation ||
+
+        !dropLocation
+
+    ) {
 
         alert(
 
@@ -357,9 +869,12 @@ requestBtn.onclick = async () => {
 
         );
 
+
+
         return;
 
     }
+
 
 
 
@@ -369,14 +884,19 @@ requestBtn.onclick = async () => {
 
     ).value;
 
+
+
+
     let seatCount = document.getElementById(
 
-    "seatCount"
+        "seatCount"
 
     ).value;
 
-    // SEND TO BACKEND
-    await fetch(
+
+
+
+    let response = await fetch(
 
         "/request_ride",
 
@@ -414,6 +934,24 @@ requestBtn.onclick = async () => {
 
 
 
+
+    let data = await response.json();
+
+
+
+
+    // SAVE BOOKING ID
+    localStorage.setItem(
+
+        "booking_id",
+
+        data.booking_id
+
+    );
+
+
+
+
     alert(
 
         "🔍 Searching for Toto Driver..."
@@ -430,6 +968,8 @@ let lastStatus = "";
 
 
 
+
+// CHECK BOOKING STATUS
 async function checkBookingStatus() {
 
     let booking_id = localStorage.getItem(
@@ -467,7 +1007,6 @@ async function checkBookingStatus() {
     // STATUS CHANGED
     if (data.status !== lastStatus) {
 
-        // ACCEPTED
         if (data.status === "accepted") {
 
             alert(
@@ -481,7 +1020,6 @@ async function checkBookingStatus() {
 
 
 
-        // REJECTED
         if (data.status === "rejected") {
 
             alert(
@@ -495,14 +1033,7 @@ async function checkBookingStatus() {
 
 
 
-        // ARRIVED
-        if (
-
-            data.status ===
-
-            "arrived"
-
-        ) {
+        if (data.status === "arrived") {
 
             alert(
 
@@ -515,14 +1046,7 @@ async function checkBookingStatus() {
 
 
 
-        // ONBOARD
-        if (
-
-            data.status ===
-
-            "onboard"
-
-        ) {
+        if (data.status === "onboard") {
 
             alert(
 
@@ -535,14 +1059,7 @@ async function checkBookingStatus() {
 
 
 
-        // COMPLETED
-        if (
-
-            data.status ===
-
-            "completed"
-
-        ) {
+        if (data.status === "completed") {
 
             alert(
 
@@ -572,20 +1089,9 @@ async function checkBookingStatus() {
 
 
 
-setInterval(
-
-    checkBookingStatus,
-
-    2000
-
-);
-
-
-
 // ONLINE DRIVERS
 async function loadOnlineDrivers() {
 
-    // MAP NOT READY
     if (!map) {
 
         return;
@@ -598,16 +1104,23 @@ async function loadOnlineDrivers() {
     // REMOVE OLD MARKERS
     driverMarkers.forEach(marker => {
 
-        map.removeLayer(marker);
+        map.removeLayer(
+
+            marker
+
+        );
 
     });
+
+
+
 
     driverMarkers = [];
 
 
 
 
-    // FETCH ONLINE DRIVERS
+    // FETCH DRIVERS
     let response = await fetch(
 
         "/get_online_drivers"
@@ -621,7 +1134,6 @@ async function loadOnlineDrivers() {
 
 
 
-    // ADD DRIVER MARKERS
     drivers.forEach(driver => {
 
         // SKIP EMPTY GPS
@@ -640,13 +1152,23 @@ async function loadOnlineDrivers() {
 
 
 
-        let marker = L.marker([
+        let marker = L.marker(
 
-            driver.latitude,
+            [
 
-            driver.longitude
+                driver.latitude,
 
-        ])
+                driver.longitude
+
+            ],
+
+            {
+
+                icon: driverIcon
+
+            }
+
+        )
 
         .addTo(map)
 
@@ -657,16 +1179,15 @@ async function loadOnlineDrivers() {
             🚖 ${driver.first_name}<br>
 
             Toto ID:
-
             ${driver.toto_number}<br>
 
             Available Seats:
-
             ${driver.available_seats}
 
             `
 
         );
+
 
 
 
@@ -679,10 +1200,28 @@ async function loadOnlineDrivers() {
 
 
 
-// CHECK STATUS EVERY 2 SECONDS
+// LOAD ONLINE DRIVERS
+loadOnlineDrivers();
+
+
+
+
+// REFRESH DRIVER LOCATIONS
 setInterval(
 
-    checkRideStatus,
+    loadOnlineDrivers,
+
+    5000
+
+);
+
+
+
+
+// CHECK BOOKING STATUS
+setInterval(
+
+    checkBookingStatus,
 
     2000
 
