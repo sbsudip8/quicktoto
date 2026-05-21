@@ -22,56 +22,45 @@
     <!-- HEADER -->
     <div class="header">
 
-        <div class="topbar">
+        <h1>
 
-            <div>
+            🚖 Driver Dashboard
 
-                <h1>🚖 Driver Dashboard</h1>
-
-            </div>
+        </h1>
 
 
 
-            <!-- DRIVER MENU -->
-            <div class="dropdown">
+        <div class="dropdown">
 
-                <button class="dropbtn">
+            <button class="dropbtn">
 
-                    Welcome,
+                Welcome,
 
-                    {{ driver[3] }}
+                {{ driver[3] }}
 
-                    ▼
+                ▼
 
-                </button>
+            </button>
 
+            <div class="dropdown-content">
 
+                <a href="#">
 
-                <div class="dropdown-content">
+                    Profile
 
-                    <a href="#">
+                </a>
 
-                        Profile
+                <a href="#">
 
-                    </a>
+                    Ride History
 
+                </a>
 
+                <a href="/logout">
 
-                    <a href="#">
+                    Logout
 
-                        Ride History
-
-                    </a>
-
-
-
-                    <a href="/logout">
-
-                        Logout
-
-                    </a>
-
-                </div>
+                </a>
 
             </div>
 
@@ -81,91 +70,115 @@
 
 
 
-    <!-- DRIVER CONTENT -->
-    <div class="driver-container">
 
-        <div class="ride-card">
+    <!-- DRIVER LAYOUT -->
+    <div class="driver-layout">
 
-    <h2>
-
-    🚖 Driver Dashboard
-
-    </h2>
-
-
-    <p>
-
-        <strong>Name:</strong>
-
-        {{ driver[3] }}
-
-        {{ driver[4] }}
-
-    </p>
+        <!-- FULLSCREEN MAP -->
+        <div id="driverMap"></div>
 
 
 
-    <p>
 
-        <strong>Toto ID:</strong>
+        <!-- DRIVER PANEL -->
+        <div class="driver-panel">
 
-        {{ driver[7] }}
+            <h2>
 
-    </p>
+                🚖 Driver Dashboard
 
-
-
-    <p>
-
-        <strong>Available Seats:</strong>
-
-        {{ driver[9] }}
-
-    </p>
+            </h2>
 
 
 
-    <p id="availabilityText">
+            <p>
 
-        Status: Offline
+                <strong>Name:</strong>
 
-    </p>
+                {{ driver[3] }}
 
-
-
-    <button id="toggleBtn">
-
-    🟢 Go Online
-
-    </button>
+            </p>
 
 
 
-    <hr>
+            <p>
+
+                <strong>Toto ID:</strong>
+
+                {{ driver[7] }}
+
+            </p>
 
 
 
-    <div id="rideContainer">
+            <p>
 
-        <h3>
+                <strong>Available Seats:</strong>
 
-            🔴 You are offline
+                <span id="seatText">
 
-        </h3>
+                    {{ driver[9] }}
+
+                </span>
+
+            </p>
+
+
+
+            <p id="availabilityText">
+
+                Status: Offline
+
+            </p>
+
+
+
+
+            <!-- ONLINE BUTTON -->
+            <button id="toggleBtn">
+
+                🟢 Go Online
+
+            </button>
+
+
+
+
+            <hr>
+
+
+
+
+            <!-- REQUEST AREA -->
+            <div id="rideContainer">
+
+                <h3>
+
+                    🔴 You are offline
+
+                </h3>
+
+            </div>
+
+        </div>
 
     </div>
 
-    <div id="rideContainer"></div>
 
-    <div id="driverMap"></div>
 
-</div>
 
-    </div>
-    
-    <!-- LEAFLET CSS -->
+    <!-- LEAFLET -->
     <link rel="stylesheet"
+
     href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+
+
+
+    <!-- ROUTING CSS -->
+    <link rel="stylesheet"
+
+    href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
 
 
 
@@ -176,15 +189,10 @@
 
 
 
-    <!-- LEAFLET ROUTING -->
-    <link rel="stylesheet"
-    href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
-
-
-
-
     <!-- ROUTING JS -->
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+
+
 
 
     <!-- DRIVER JS -->

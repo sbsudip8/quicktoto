@@ -5,6 +5,7 @@ from flask import session
 from flask import Flask, request, jsonify, render_template, redirect
 from datetime import datetime, timedelta
 import sqlite3
+import ast
 
 app = Flask(__name__)
 app.secret_key = "quicktoto_secret"
@@ -175,7 +176,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     status TEXT,
 
     queue_position INTEGER DEFAULT 0,
-               
+
     assigned_time TEXT
 
 )
@@ -389,19 +390,13 @@ def driver():
 
 # REQUEST RIDE
 @app.route(
-
     "/request_ride",
-
     methods=["POST"]
-
 )
 
 def request_ride():
 
     data = request.json
-
-
-
 
     pickup = data["pickup"]
 
@@ -412,77 +407,32 @@ def request_ride():
     fare = data["fare"]
 
     seats_requested = int(
-
         data["seats"]
-
     )
 
-
-
-
-    # PASSENGER
     passenger_id = session["user_id"]
-
-
-
 
     # CREATE BOOKING ID
     cursor.execute(
-
         "SELECT COUNT(*) FROM bookings"
-
     )
-
-
 
     total_bookings = cursor.fetchone()[0]
 
-
-
     booking_id = (
-
-        "B"
-
-        + str(total_bookings + 1)
-
+        "B" + str(total_bookings + 1)
     )
 
-    # FIND ELIGIBLE DRIVERS
+    # GET ONLINE DRIVERS
     cursor.execute(
-
         '''
-
         SELECT *
-
         FROM drivers
-
         WHERE online = 1
-
         '''
-
     )
 
     drivers = cursor.fetchall()
-
-    # FIND ELIGIBLE DRIVERS
-    cursor.execute(
-
-        '''
-
-        SELECT *
-
-        FROM drivers
-
-        WHERE online = 1
-
-        '''
-
-    )
-
-    drivers = cursor.fetchall()
-
-
-
 
     eligible_drivers = []
 
@@ -491,84 +441,59 @@ def request_ride():
 
         driver_id = driver[0]
 
+        # SKIP EMPTY GPS
+        if driver[10] == 0 or driver[11] == 0:
+            continue
 
-
-        # CHECK DRIVER BLOCK
+        # CHECK BLOCK HISTORY
         cursor.execute(
-
             '''
-
             SELECT *
-
             FROM dispatch_history
-
             WHERE driver_id = ?
-
             ORDER BY id DESC
-
             LIMIT 1
-
             ''',
-
             (driver_id,)
-
         )
-
-
 
         history = cursor.fetchone()
 
-
-
-
-        # DRIVER TEMP BLOCKED
+        # BLOCKED DRIVER
         if history:
 
             blocked_until = history[4]
 
-
-
             if blocked_until:
 
                 blocked_dt = datetime.fromisoformat(
-
                     blocked_until
-
                 )
 
-
-
-                # STILL BLOCKED
                 if datetime.now() < blocked_dt:
-
                     continue
 
-
-
-
         available_seats = driver[9]
-
-
 
         # PRIVATE RIDE
         if ride_type == "Private":
 
             if available_seats == 5:
 
-                eligible_drivers.append(driver)
-
-
-
+                eligible_drivers.append(
+                    driver
+                )
 
         # SHARED RIDE
         else:
 
             if available_seats >= seats_requested:
 
-                eligible_drivers.append(driver)
+                eligible_drivers.append(
+                    driver
+                )
 
-    
-    # NO ELIGIBLE DRIVERS
+    # NO DRIVER
     if len(eligible_drivers) == 0:
 
         return jsonify({
@@ -577,32 +502,21 @@ def request_ride():
 
         })
 
-
-
-
     # SORT BY AVAILABLE SEATS
-    # Shared rides with fewer remaining seats
-    # get higher priority first
-
     eligible_drivers.sort(
-
         key=lambda d: d[9]
-
     )
 
-    # SAVE DRIVER QUEUE
+    # DRIVER QUEUE
     driver_queue = []
 
     for driver in eligible_drivers:
 
         driver_queue.append(
-
             driver[0]
-
         )
 
-
-    # HIGHEST PRIORITY DRIVER
+    # FIRST DRIVER
     selected_driver = eligible_drivers[0]
 
     assigned_driver_id = selected_driver[0]
@@ -635,11 +549,15 @@ def request_ride():
 
             fare,
 
-            status
+            status,
+
+            queue_position,
+
+            assigned_time
 
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         ''',
 
@@ -673,12 +591,7 @@ def request_ride():
 
     )
 
-
-
     conn.commit()
-
-
-
 
     return jsonify({
 
@@ -690,18 +603,14 @@ def request_ride():
 
 
 
-
 # GET DRIVER BOOKINGS
 @app.route("/get_ride")
+
 def get_ride():
 
-    # DRIVER USER ID
     user_id = session["user_id"]
 
-
-
-
-    # FIND DRIVER
+    # GET DRIVER
     cursor.execute(
 
         '''
@@ -718,12 +627,7 @@ def get_ride():
 
     )
 
-
-
     driver = cursor.fetchone()
-
-
-
 
     if not driver:
 
@@ -733,13 +637,7 @@ def get_ride():
 
         })
 
-
-
-
     driver_id = driver[0]
-
-
-
 
     # GET PENDING BOOKING
     cursor.execute(
@@ -747,12 +645,10 @@ def get_ride():
         '''
 
         SELECT *
-
         FROM bookings
-
         WHERE driver_id = ?
         AND status = 'pending'
-
+        ORDER BY id DESC
         LIMIT 1
 
         ''',
@@ -761,12 +657,7 @@ def get_ride():
 
     )
 
-
-
     booking = cursor.fetchone()
-
-
-
 
     if not booking:
 
@@ -776,8 +667,32 @@ def get_ride():
 
         })
 
+    pickup = ast.literal_eval(
+        booking[5]
+    )
 
+    drop = ast.literal_eval(
+        booking[6]
+    )
 
+    # GET PASSENGER INFO
+    cursor.execute(
+
+        '''
+
+        SELECT first_name, phone
+
+        FROM users
+
+        WHERE id = ?
+
+        ''',
+
+        (booking[3],)
+
+    )
+
+    passenger = cursor.fetchone()
 
     return jsonify({
 
@@ -785,15 +700,19 @@ def get_ride():
 
             "booking_id": booking[1],
 
-            "pickup": booking[4],
+            "pickup": pickup,
 
-            "drop": booking[5],
+            "drop": drop,
 
-            "rideType": booking[6],
+            "rideType": booking[7],
 
-            "seats": booking[7],
+            "seats": booking[8],
 
-            "fare": booking[8]
+            "fare": booking[9],
+
+            "passenger_name": passenger[0],
+
+            "passenger_phone": passenger[1]
 
         }
 
@@ -2328,4 +2247,4 @@ def check_timeout():
 
 if __name__ == "__main__":
 
-    app.run(debug=True)
+    app.run()

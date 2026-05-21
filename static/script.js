@@ -738,6 +738,7 @@ function calculateDistance(
 // UPDATE FARE
 function updateFare() {
 
+    // CHECK LOCATIONS
     if (
 
         !pickupLocation ||
@@ -753,6 +754,7 @@ function updateFare() {
 
 
 
+    // DISTANCE
     let distance = calculateDistance(
 
         pickupLocation.lat,
@@ -766,13 +768,13 @@ function updateFare() {
 
 
 
-    // APPROX KM
+    // CONVERT TO KM
     distance = distance * 111;
 
 
 
 
-    // GET RIDE TYPE
+    // RIDE TYPE
     let rideType = document.querySelector(
 
         'input[name="rideType"]:checked'
@@ -782,26 +784,53 @@ function updateFare() {
 
 
 
-    let fare;
+    // SEATS
+    let seats = parseInt(
+
+        document.getElementById(
+
+            "seatCount"
+
+        ).value
+
+    );
 
 
 
 
+    let fare = 0;
+
+
+
+
+    // PRIVATE
     if (rideType === "Private") {
 
         fare = 30 + (distance * 10);
 
     }
 
+
+
+
+    // SHARED
     else {
 
-        fare = 15 + (distance * 5);
+        // PER SEAT FARE
+        let seatFare = 10 + (distance * 3);
+
+
+
+
+        // TOTAL
+        fare = seatFare * seats;
 
     }
 
 
 
 
+    // ROUND VALUES
     fare = Math.round(
 
         fare
@@ -811,11 +840,24 @@ function updateFare() {
 
 
 
+    // UPDATE UI
     document.getElementById(
 
         "fareText"
 
-    ).innerText = "₹" + fare;
+    ).innerHTML = `
+
+        Distance:
+
+        ${distance.toFixed(2)} km
+
+        <br><br>
+
+        Estimated Fare:
+
+        ₹${fare}
+
+    `;
 
 }
 
@@ -840,7 +882,18 @@ document.querySelectorAll(
 });
 
 
+// UPDATE ON SEAT CHANGE
+document.getElementById(
 
+    "seatCount"
+
+).addEventListener(
+
+    "change",
+
+    updateFare
+
+);
 
 // REQUEST BUTTON
 let requestBtn = document.getElementById(

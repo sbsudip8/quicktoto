@@ -394,332 +394,44 @@ function startDriverGPS() {
 // FETCH RIDES
 async function fetchRide() {
 
-    // ONLY ONLINE
-    if (!isOnline) {
+    try {
 
-        return;
+        // ONLY ONLINE
+        if (!isOnline) {
 
-    }
-
-
-
-
-    // ACTIVE RIDE
-    if (rideAccepted) {
-
-        return;
-
-    }
-
-
-
-
-    let response = await fetch(
-
-        "/get_ride"
-
-    );
-
-
-
-    let data = await response.json();
-
-
-
-
-    // RIDE EXISTS
-    if (data.ride) {
-
-        document.getElementById(
-
-            "rideContainer"
-
-        ).innerHTML = `
-
-            <h2>
-
-                Incoming Ride
-
-            </h2>
-
-
-
-            <p>
-
-                <strong>Ride Type:</strong>
-
-                ${data.ride.rideType}
-
-            </p>
-
-
-
-            <p>
-
-                <strong>Fare:</strong>
-
-                ${data.ride.fare}
-
-            </p>
-
-
-
-            <p>
-
-                <strong>Seats:</strong>
-
-                ${data.ride.seats}
-
-            </p>
-
-
-
-            <button id="acceptBtn">
-
-                ✅ Accept Ride
-
-            </button>
-
-
-
-            <button id="rejectBtn">
-
-                ❌ Reject Ride
-
-            </button>
-
-        `;
-
-
-
-
-        // PASSENGER PICKUP
-        let pickup = data.ride.pickup;
-
-
-
-
-        // REMOVE OLD PASSENGER MARKER
-        if (passengerMarker) {
-
-            driverMap.removeLayer(
-
-                passengerMarker
-
-            );
+            return;
 
         }
 
 
 
 
-        // PASSENGER MARKER
-        passengerMarker = L.marker(
+        // ACTIVE RIDE
+        if (rideAccepted) {
 
-            [
-
-                pickup.lat,
-
-                pickup.lng
-
-            ],
-
-            {
-
-                icon: passengerIcon
-
-            }
-
-        )
-
-        .addTo(driverMap)
-
-        .bindPopup(
-
-            "📍 Passenger Pickup"
-
-        )
-
-        .openPopup();
-
-
-
-
-        // REMOVE OLD ROUTE
-        if (routeControl) {
-
-            driverMap.removeControl(
-
-                routeControl
-
-            );
+            return;
 
         }
 
 
 
 
-        // DRAW ROUTE
-        if (
+        let response = await fetch(
 
-            currentDriverLat &&
-
-            currentDriverLng
-
-        ) {
-
-            routeControl = L.Routing.control({
-
-                waypoints: [
-
-                    L.latLng(
-
-                        currentDriverLat,
-
-                        currentDriverLng
-
-                    ),
-
-                    L.latLng(
-
-                        pickup.lat,
-
-                        pickup.lng
-
-                    )
-
-                ],
-
-
-
-
-                lineOptions: {
-
-                    styles: [
-
-                        {
-
-                            color: "blue",
-
-                            opacity: 0.8,
-
-                            weight: 6
-
-                        }
-
-                    ]
-
-                },
-
-
-
-
-                routeWhileDragging: false,
-
-                draggableWaypoints: false,
-
-                addWaypoints: false,
-
-                fitSelectedRoutes: true,
-
-                show: false,
-
-                createMarker: () => null
-
-            }).addTo(driverMap);
-
-        }
-
-
-
-
-        // MOVE MAP
-        driverMap.setView(
-
-            [
-
-                pickup.lat,
-
-                pickup.lng
-
-            ],
-
-            14
+            "/get_ride"
 
         );
 
 
 
-
-        // ACCEPT BUTTON
-        document.getElementById(
-
-            "acceptBtn"
-
-        ).onclick = async () => {
-
-            let response = await fetch(
-
-                "/accept_ride",
-
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type": "application/json"
-
-                    },
-
-                    body: JSON.stringify({
-
-                        booking_id: data.ride.booking_id
-
-                    })
-
-                }
-
-            );
-
-
-
-            let result = await response.json();
+        let data = await response.json();
 
 
 
 
-            // ALREADY TAKEN
-            if (
+        // RIDE EXISTS
+        if (data.ride) {
 
-                result.status ===
-
-                "Already Taken"
-
-            ) {
-
-                alert(
-
-                    "Ride already accepted by another driver."
-
-                );
-
-
-
-                return;
-
-            }
-
-
-
-
-            // LOCK CURRENT RIDE
-            rideAccepted = true;
-
-
-
-
-            // UPDATE UI
             document.getElementById(
 
                 "rideContainer"
@@ -728,31 +440,93 @@ async function fetchRide() {
 
                 <h2>
 
-                    Ride Accepted
+                    🚖 Incoming Ride
 
                 </h2>
 
 
 
-                <button id="arrivedBtn">
+                <p>
 
-                    📍 Reached Pickup
+                    <strong>Passenger:</strong>
+
+                    ${data.ride.passenger_name}
+
+                </p>
+
+
+
+                <p>
+
+                    <strong>Phone:</strong>
+
+                    ${data.ride.passenger_phone}
+
+                </p>
+
+
+
+                <p>
+
+                    <strong>Ride Type:</strong>
+
+                    ${data.ride.rideType}
+
+                </p>
+
+
+
+                <p>
+
+                    <strong>Seats:</strong>
+
+                    ${data.ride.seats}
+
+                </p>
+
+
+
+                <p>
+
+                    <strong>Fare:</strong>
+
+                    ${data.ride.fare}
+
+                </p>
+
+
+
+                <p>
+
+                    <strong>Pickup:</strong>
+
+                    Passenger Location
+
+                </p>
+
+
+
+                <p>
+
+                    <strong>Drop:</strong>
+
+                    Destination Selected
+
+                </p>
+
+
+
+                <button id="acceptBtn">
+
+                    ✅ Accept Ride
 
                 </button>
 
 
 
-                <button id="onboardBtn">
+                <button id="rejectBtn">
 
-                    👤 Passenger Onboard
-
-                </button>
-
-
-
-                <button id="completeBtn">
-
-                    ✅ Complete Ride
+                    ❌ Reject Ride
 
                 </button>
 
@@ -761,16 +535,213 @@ async function fetchRide() {
 
 
 
-            // ARRIVED
+            // PASSENGER PICKUP AND DROP
+            let pickup = data.ride.pickup;
+            let drop = data.ride.drop;
+
+            // REMOVE OLD PASSENGER MARKER
+            if (passengerMarker) {
+
+                driverMap.removeLayer(
+
+                    passengerMarker
+
+                );
+
+            }
+
+
+
+
+            // PASSENGER MARKER
+            passengerMarker = L.marker(
+
+                [
+
+                    pickup.lat,
+
+                    pickup.lng
+
+                ],
+
+                {
+
+                    icon: passengerIcon
+
+                }
+
+            )
+
+            .addTo(driverMap)
+
+            .bindPopup(
+
+                "📍 Passenger Pickup"
+
+            )
+
+            .openPopup();
+
+            let dropMarker = L.marker(
+
+                [
+
+                    drop.lat,
+
+                    drop.lng
+
+                ]
+
+            )
+
+            .addTo(driverMap)
+
+            .bindPopup(
+
+                "🏁 Drop Location"
+
+            );
+
+
+
+            // REMOVE OLD ROUTE
+            if (routeControl) {
+
+                driverMap.removeControl(
+
+                    routeControl
+
+                );
+
+            }
+
+
+
+
+            // DRAW ROUTE
+            if (
+
+                currentDriverLat &&
+
+                currentDriverLng
+
+            ) {
+                console.log(
+
+                    "ROUTE DATA:",
+
+                    currentDriverLat,
+                    currentDriverLng,
+
+                    pickup,
+
+                    drop
+
+                );
+
+                routeControl = L.Routing.control({
+
+                    waypoints: [
+
+                        L.latLng(
+
+                            currentDriverLat,
+
+                            currentDriverLng
+
+                        ),
+
+                        L.latLng(
+
+                            pickup.lat,
+
+                            pickup.lng
+
+                        ),
+
+                        L.latLng(
+
+                            drop.lat,
+
+                            drop.lng
+                        )
+
+                    ],
+
+
+
+
+                    lineOptions: {
+
+                        styles: [
+
+                            {
+
+                                color: "#0066ff",
+
+                                opacity: 1,
+
+                                weight: 8
+
+                            }
+
+                        ]
+
+                    },
+
+
+
+
+                    routeWhileDragging: false,
+
+                    draggableWaypoints: false,
+
+                    addWaypoints: false,
+
+                    fitSelectedRoutes: true,
+
+                    createMarker: () => null
+
+                }).addTo(driverMap);
+                setTimeout(() => {
+
+                    driverMap.invalidateSize();
+
+                }, 300);
+
+            }
+
+
+
+
+            // MOVE MAP
+            driverMap.setView(
+
+                [
+
+                    pickup.lat,
+
+                    pickup.lng
+
+                ],
+
+                14
+
+            );
+
+
+
+
+            // ACCEPT BUTTON
             document.getElementById(
 
-                "arrivedBtn"
+                "acceptBtn"
 
             ).onclick = async () => {
 
-                await fetch(
+                let response = await fetch(
 
-                    "/ride_arrived",
+                    "/accept_ride",
 
                     {
 
@@ -794,27 +765,277 @@ async function fetchRide() {
 
 
 
-                alert(
+                let result = await response.json();
 
-                    "Reached Pickup"
 
-                );
+
+
+                // ALREADY TAKEN
+                if (
+
+                    result.status ===
+
+                    "Already Taken"
+
+                ) {
+
+                    alert(
+
+                        "Ride already accepted by another driver."
+
+                    );
+
+
+
+                    return;
+
+                }
+
+
+
+
+                // LOCK CURRENT RIDE
+                rideAccepted = true;
+
+
+
+
+                // UPDATE UI
+                document.getElementById(
+
+                    "rideContainer"
+
+                ).innerHTML = `
+
+                    <h2>
+
+                        Ride Accepted
+
+                    </h2>
+
+
+
+                    <button id="arrivedBtn">
+
+                        📍 Reached Pickup
+
+                    </button>
+
+
+
+                    <button id="onboardBtn">
+
+                        👤 Passenger Onboard
+
+                    </button>
+
+
+
+                    <button id="completeBtn">
+
+                        ✅ Complete Ride
+
+                    </button>
+
+                `;
+
+
+
+
+                // ARRIVED
+                document.getElementById(
+
+                    "arrivedBtn"
+
+                ).onclick = async () => {
+
+                    await fetch(
+
+                        "/ride_arrived",
+
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type": "application/json"
+
+                            },
+
+                            body: JSON.stringify({
+
+                                booking_id: data.ride.booking_id
+
+                            })
+
+                        }
+
+                    );
+
+
+
+                    alert(
+
+                        "Reached Pickup"
+
+                    );
+
+                };
+
+
+
+
+                // ONBOARD
+                document.getElementById(
+
+                    "onboardBtn"
+
+                ).onclick = async () => {
+
+                    await fetch(
+
+                        "/ride_onboard",
+
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type": "application/json"
+
+                            },
+
+                            body: JSON.stringify({
+
+                                booking_id: data.ride.booking_id
+
+                            })
+
+                        }
+
+                    );
+
+
+
+                    alert(
+
+                        "Passenger Onboard"
+
+                    );
+
+                };
+
+
+
+
+                // COMPLETE
+                document.getElementById(
+
+                    "completeBtn"
+
+                ).onclick = async () => {
+
+                    await fetch(
+
+                        "/complete_ride",
+
+                        {
+
+                            method: "POST",
+
+                            headers: {
+
+                                "Content-Type": "application/json"
+
+                            },
+
+                            body: JSON.stringify({
+
+                                booking_id: data.ride.booking_id
+
+                            })
+
+                        }
+
+                    );
+
+
+
+                    alert(
+
+                        "Ride Completed"
+
+                    );
+
+
+
+
+                    // RESET UI
+                    document.getElementById(
+
+                        "rideContainer"
+
+                    ).innerHTML = `
+
+                        <h3>
+
+                            Waiting for Ride...
+
+                        </h3>
+
+                    `;
+
+
+
+
+                    // REMOVE ROUTE
+                    if (routeControl) {
+
+                        driverMap.removeControl(
+
+                            routeControl
+
+                        );
+
+                        routeControl = null;
+                    }
+
+
+
+                    if (passengerMarker) {
+
+                        driverMap.removeLayer(
+                            passengerMarker
+                        );
+
+                        passengerMarker = null;
+                    }
+
+
+
+
+                    // RESET STATE
+                    rideAccepted = false;
+
+                };
 
             };
 
 
 
 
-            // ONBOARD
+            // REJECT BUTTON
             document.getElementById(
 
-                "onboardBtn"
+                "rejectBtn"
 
             ).onclick = async () => {
 
                 await fetch(
 
-                    "/ride_onboard",
+                    "/reject_ride",
 
                     {
 
@@ -840,51 +1061,7 @@ async function fetchRide() {
 
                 alert(
 
-                    "Passenger Onboard"
-
-                );
-
-            };
-
-
-
-
-            // COMPLETE
-            document.getElementById(
-
-                "completeBtn"
-
-            ).onclick = async () => {
-
-                await fetch(
-
-                    "/complete_ride",
-
-                    {
-
-                        method: "POST",
-
-                        headers: {
-
-                            "Content-Type": "application/json"
-
-                        },
-
-                        body: JSON.stringify({
-
-                            booking_id: data.ride.booking_id
-
-                        })
-
-                    }
-
-                );
-
-
-
-                alert(
-
-                    "Ride Completed"
+                    "❌ Ride Rejected"
 
                 );
 
@@ -920,62 +1097,16 @@ async function fetchRide() {
 
                 }
 
-
-
-
-                // RESET STATE
-                rideAccepted = false;
-
             };
 
-        };
+        }
 
 
 
 
-        // REJECT BUTTON
-        document.getElementById(
+        // NO RIDE
+        else {
 
-            "rejectBtn"
-
-        ).onclick = async () => {
-
-            await fetch(
-
-                "/reject_ride",
-
-                {
-
-                    method: "POST",
-
-                    headers: {
-
-                        "Content-Type": "application/json"
-
-                    },
-
-                    body: JSON.stringify({
-
-                        booking_id: data.ride.booking_id
-
-                    })
-
-                }
-
-            );
-
-
-
-            alert(
-
-                "❌ Ride Rejected"
-
-            );
-
-
-
-
-            // RESET UI
             document.getElementById(
 
                 "rideContainer"
@@ -990,125 +1121,34 @@ async function fetchRide() {
 
             `;
 
-
-
-
-            // REMOVE ROUTE
-            if (routeControl) {
-
-                driverMap.removeControl(
-
-                    routeControl
-
-                );
-
-            }
-
-        };
+        }
 
     }
 
+    catch(error) {
 
-
-
-    // NO RIDE
-    else {
-
-        document.getElementById(
-
-            "rideContainer"
-
-        ).innerHTML = `
-
-            <h3>
-
-                Waiting for Ride...
-
-            </h3>
-
-        `;
+        console.error(
+            "fetchRide error:",
+            error
+        );
 
     }
-
 }
 
 
+// // CHECK TIMEOUTS
+// setInterval(
 
+//     async () => {
 
-// CHECK RIDES
-window.onload = () => {
+//         await fetch(
 
-    // BUTTON
-    toggleBtn = document.getElementById(
+//             "/check_timeout"
 
-        "toggleBtn"
+//         );
 
-    );
+//     },
 
+//     5000
 
-
-
-    // INITIALIZE DRIVER MAP
-    driverMap = L.map(
-
-        "driverMap"
-
-    ).setView(
-
-        [26.7271, 88.3953],
-
-        13
-
-    );
-
-
-
-
-    // TILE LAYER
-    L.tileLayer(
-
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-
-        {
-
-            attribution:
-
-                "&copy; OpenStreetMap contributors"
-
-        }
-
-    ).addTo(driverMap);
-
-
-
-
-    // START FETCH LOOP
-    setInterval(
-
-        fetchRide,
-
-        2000
-
-    );
-
-};
-
-
-
-
-// CHECK TIMEOUTS
-setInterval(
-
-    async () => {
-
-        await fetch(
-
-            "/check_timeout"
-
-        );
-
-    },
-
-    5000
-
-);
+// );

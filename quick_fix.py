@@ -1,34 +1,34 @@
 import sqlite3
 
+# CONNECT DATABASE
 conn = sqlite3.connect(
-
     "database/quicktoto.db"
-
 )
 
 cursor = conn.cursor()
 
+print("Cleaning Quicktoto database...")
 
-# RESET ALL DRIVER SEATS
+# DELETE BOOKINGS
 cursor.execute(
+    "DELETE FROM bookings"
+)
 
+# DELETE DISPATCH HISTORY
+cursor.execute(
+    "DELETE FROM dispatch_history"
+)
+
+# RESET DRIVER SEATS
+cursor.execute(
     '''
-
     UPDATE drivers
-
-    SET available_seats = 5
-
+    SET available_seats = total_seats
     '''
-
 )
 
 conn.commit()
 
-
-print(
-
-    "✅ All driver seats reset to 5"
-
-)
+print("Database cleaned successfully.")
 
 conn.close()
